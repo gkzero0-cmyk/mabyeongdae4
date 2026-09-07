@@ -4,6 +4,30 @@
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+  const FREE_PASS_NAMES = Object.freeze(['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
+  const FREE_PASS_SET = new Set(FREE_PASS_NAMES.map(normalizeRosterName));
+
+  function normalizeRosterName(value) {
+    return String(value || '').trim().replace(/\s+/g, '').toLowerCase();
+  }
+
+  function isFreePassApplicant(item) {
+    return FREE_PASS_SET.has(normalizeRosterName(item?.userNick)) || FREE_PASS_SET.has(normalizeRosterName(item?.userId));
+  }
+
+  function calculateUpStats(items) {
+    const list = Array.isArray(items) ? items : [];
+    const total = list.reduce((sum, item) => {
+      const value = Number(item?.up || 0);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    return { total, average: list.length ? total / list.length : 0 };
+  }
+
+  function shouldCollapseComment(comment, limit = 80) {
+    const text = String(comment || '');
+    return /[\r\n]/.test(text) || text.length > limit;
+  }
 
   function favoriteKey(item) {
     const commentNo = String(item?.commentNo || '').trim();
@@ -149,6 +173,10 @@
     readObjectMap,
     cyclePassState,
     exportSettings,
-    importSettings
+    importSettings,
+    FREE_PASS_NAMES,
+    isFreePassApplicant,
+    calculateUpStats,
+    shouldCollapseComment
   };
 });
