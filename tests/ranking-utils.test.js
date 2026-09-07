@@ -12,7 +12,11 @@ const {
   readObjectMap,
   cyclePassState,
   exportSettings,
-  importSettings
+  importSettings,
+  FREE_PASS_NAMES,
+  isFreePassApplicant,
+  calculateUpStats,
+  shouldCollapseComment
 } = require('../ranking-utils');
 
 test('buildRankMap stores rank by stable comment number', () => {
@@ -95,4 +99,24 @@ test('settings export and import round-trip normalized metadata', () => {
   assert.deepEqual(parsed.applicantTypes, { 'comment:1': 'soldier' });
   assert.deepEqual(parsed.passStates, { 'comment:2': 'excluded' });
   assert.equal(parsed.version, 1);
+});
+
+test('free pass roster is fixed and matches applicant nickname or id', () => {
+  assert.deepEqual(FREE_PASS_NAMES, ['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
+  assert.equal(isFreePassApplicant({ userNick: '니니', userId: 'someone' }), true);
+  assert.equal(isFreePassApplicant({ userNick: '다른이름', userId: '유연서' }), true);
+  assert.equal(isFreePassApplicant({ userNick: ' 울산큰고래 ', userId: 'whale' }), true);
+  assert.equal(isFreePassApplicant({ userNick: '헤리', userId: 'golf2237' }), false);
+});
+
+test('calculateUpStats returns total and average UP across all applicants', () => {
+  assert.deepEqual(calculateUpStats([{ up: 3051 }, { up: '949' }, { up: null }]), { total: 4000, average: 1333.3333333333333 });
+  assert.deepEqual(calculateUpStats([]), { total: 0, average: 0 });
+});
+
+test('shouldCollapseComment collapses multiline or long comments only', () => {
+  assert.equal(shouldCollapseComment('짧은 댓글입니다.'), false);
+  assert.equal(shouldCollapseComment('첫 줄\n둘째 줄'), true);
+  assert.equal(shouldCollapseComment('가'.repeat(81)), true);
+  assert.equal(shouldCollapseComment('가'.repeat(80)), false);
 });
