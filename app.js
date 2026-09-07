@@ -5,7 +5,7 @@
     types: 'mabyeongdae4-up-ranking:types:v1'
   };
   const {
-    favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday,
+    favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday, isKstToday,
     readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType,
     readObjectMap, exportSettings, importSettings, FREE_PASS_NAMES, isFreePassApplicant,
     calculateUpStats, shouldCollapseComment
@@ -152,15 +152,18 @@
         ? `<a class="avatar-link" href="${station(item.userId)}" target="_blank" rel="noopener noreferrer" title="${esc(item.userNick)} 방송국 열기"><img class="avatar" src="${image}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="avatar-fallback" style="display:none">↗</span></a>`
         : '<span class="avatar-link"><span class="avatar-fallback">?</span></span>';
       const autoType = detectApplicantType(item.comment);
+      const currentType = getType(item);
+      const typeClass = currentType === 'soldier' ? 'type-soldier' : currentType === 'officer' ? 'type-officer' : 'type-unknown';
+      const isNew = isKstToday(item.regDate);
       const freePass = isFreePassApplicant(item);
       const expanded = expandedComments.has(key);
       const collapsible = shouldCollapseComment(item.comment);
       const commentUrl = item.commentUrl || `https://www.sooplive.com/station/devil0108/post/206507027${item.commentNo ? `#comment_noti${encodeURIComponent(item.commentNo)}` : ''}`;
       html += `<tr data-rank="${item.rank}">
         <td class="rank"><div class="rank-stack"><span class="rank-badge">${item.rank}</span>${rankChangeHtml(item)}</div></td>
-        <td class="user"><div class="userbox">${avatar}<div class="names"><div class="name-row"><span class="nick">${esc(item.userNick)}</span>${freePass ? '<span class="free-pass-badge">프리패스</span>' : ''}<button class="favorite-btn${favorite ? ' active' : ''}" data-key="${esc(key)}" type="button" title="${favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${favorite ? '★' : '☆'}</button></div><div class="id">${esc(item.userId || '-')}</div></div></div></td>
+        <td class="user"><div class="userbox">${avatar}<div class="names"><div class="name-row"><span class="nick">${esc(item.userNick)}</span>${isNew ? '<span class="new-badge">New</span>' : ''}${freePass ? '<span class="free-pass-badge">프리패스</span>' : ''}<button class="favorite-btn${favorite ? ' active' : ''}" data-key="${esc(key)}" type="button" title="${favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${favorite ? '★' : '☆'}</button></div><div class="id">${esc(item.userId || '-')}</div></div></div></td>
         <td class="comment"><div class="comment-wrap"><span class="comment-text${expanded ? ' expanded' : ' collapsed'}">${esc(item.comment || '-')}</span>${collapsible ? `<button class="comment-toggle-btn" type="button" data-key="${esc(key)}">${expanded ? '접기' : '더보기'}</button>` : ''}<span class="tag-auto">자동분류: ${typeLabel(autoType)}</span></div></td>
-        <td class="type"><select class="applicant-type-select" data-key="${esc(key)}"><option value="auto"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option><option value="soldier"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>
+        <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"><option value="auto"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option><option value="soldier"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>
         <td class="up"><span class="upnum">${fmt.format(item.up || 0)}</span></td>
         <td class="time">${esc(prettyDate(item.regDate))}</td>
         <td class="link"><a class="comment-link" href="${esc(commentUrl)}" target="_blank" rel="noopener noreferrer">신청 댓글 보기 ↗</a></td>
