@@ -64,3 +64,28 @@ test('table no longer has a manual free-pass column and comments default to comp
   assert.match(css, /text-overflow:ellipsis/);
   assert.match(css, /comment-text\.collapsed/);
 });
+
+test('app renders New badge next to applicants written today', () => {
+  const js = read('app.js');
+  const css = read('styles.css');
+  assert.match(js, /isKstToday/);
+  assert.match(js, /new-badge/);
+  assert.match(js, />New<|>NEW</);
+  assert.match(css, /\.new-badge/);
+});
+
+test('classification and personal filters use requested semantic colors', () => {
+  const js = read('app.js');
+  const css = read('styles.css');
+  assert.match(js, /type-soldier/);
+  assert.match(js, /type-officer/);
+  assert.match(css, /--orange:/);
+  assert.match(css, /--purple:/);
+  assert.match(css, /#soldierFilterBtn\{color:var\(--green\)/);
+  assert.match(css, /#officerFilterBtn\{color:var\(--orange\)/);
+  assert.match(css, /filter-btn\.favorite\{color:var\(--yellow\)/);
+  assert.match(css, /filter-btn\.pass[^}]*color:var\(--purple\)/);
+  assert.match(css, /free-pass-badge[^}]*color:[^}]*purple|free-pass-badge[^}]*var\(--purple\)/);
+  assert.match(css, /type-soldier[^}]*var\(--green\)/);
+  assert.match(css, /type-officer[^}]*var\(--orange\)/);
+});
