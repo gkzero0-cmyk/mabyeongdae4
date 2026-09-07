@@ -77,12 +77,13 @@
     return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(shifted.getUTCDate()).padStart(2, '0')}`;
   }
 
+  function isKstToday(value, nowMs = Date.now()) {
+    const timestamp = parseKstDate(value);
+    return Boolean(timestamp && timestamp <= nowMs && kstDayKey(timestamp) === kstDayKey(nowMs));
+  }
+
   function countKstToday(comments, nowMs = Date.now()) {
-    const today = kstDayKey(nowMs);
-    return (comments || []).reduce((count, item) => {
-      const timestamp = parseKstDate(item?.regDate);
-      return count + (timestamp && timestamp <= nowMs && kstDayKey(timestamp) === today ? 1 : 0);
-    }, 0);
+    return (comments || []).reduce((count, item) => count + (isKstToday(item?.regDate, nowMs) ? 1 : 0), 0);
   }
 
   function readFavoriteIds(raw) {
@@ -106,9 +107,14 @@
 
   function detectApplicantType(comment) {
     const text = String(comment || '').replace(/\s+/g, ' ').trim();
-    if (!text) return 'unknown';
-    if (/간부\s*(신청|지원)?/i.test(text)) return 'officer';
-    if (/병사\s*(신청|지원)?/i.test(text)) return 'soldier';
+    if (!text || /후추/i.test(text)) return 'unknown';
+
+    const hasOfficer = /간부/i.test(text);
+    const hasSoldier = /병사|행정병/i.test(text) || /신청\s*분야\s*[:：]?\s*병(?:\s|$|[\/,.)])/i.test(text);
+
+    if (hasOfficer && hasSoldier) return 'unknown';
+    if (hasOfficer) return 'officer';
+    if (hasSoldier) return 'soldier';
     return 'unknown';
   }
 
@@ -166,6 +172,7 @@
     getRankChange,
     parseKstDate,
     countKstToday,
+    isKstToday,
     readFavoriteIds,
     toggleFavoriteId,
     detectApplicantType,
