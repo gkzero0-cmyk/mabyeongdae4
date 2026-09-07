@@ -16,7 +16,8 @@ const {
   FREE_PASS_NAMES,
   isFreePassApplicant,
   calculateUpStats,
-  shouldCollapseComment
+  shouldCollapseComment,
+  isKstToday
 } = require('../ranking-utils');
 
 test('buildRankMap stores rank by stable comment number', () => {
@@ -59,10 +60,19 @@ test('favoriteKey falls back when comment number is unavailable', () => {
   assert.equal(favoriteKey({ userId: 'abc', regDate: '2026-09-08 03:00:00' }), 'user:abc|2026-09-08 03:00:00');
 });
 
-test('detectApplicantType recognizes soldier and officer wording', () => {
+test('detectApplicantType recognizes expanded soldier application wording', () => {
   assert.equal(detectApplicantType('마병대 4 병사 신청합니다'), 'soldier');
+  assert.equal(detectApplicantType('신청 분야: 병'), 'soldier');
+  assert.equal(detectApplicantType('행정병 신청 합니다'), 'soldier');
+  assert.equal(detectApplicantType('행정병을 지원합니다'), 'soldier');
   assert.equal(detectApplicantType('간부 지원합니다'), 'officer');
-  assert.equal(detectApplicantType('간부 신청 / 병사 경험 있음'), 'officer');
+});
+
+test('detectApplicantType keeps pepper or mixed officer/soldier comments unclassified', () => {
+  assert.equal(detectApplicantType('후추'), 'unknown');
+  assert.equal(detectApplicantType('후추 / 병사 신청합니다'), 'unknown');
+  assert.equal(detectApplicantType('간부 신청 / 병사 경험 있음'), 'unknown');
+  assert.equal(detectApplicantType('간부 경험 / 신청 분야: 병'), 'unknown');
   assert.equal(detectApplicantType('열심히 하겠습니다'), 'unknown');
 });
 
@@ -119,4 +129,12 @@ test('shouldCollapseComment collapses multiline or long comments only', () => {
   assert.equal(shouldCollapseComment('첫 줄\n둘째 줄'), true);
   assert.equal(shouldCollapseComment('가'.repeat(81)), true);
   assert.equal(shouldCollapseComment('가'.repeat(80)), false);
+});
+
+test('isKstToday marks only applicants written today in Korea time', () => {
+  const now = Date.parse('2026-09-08T07:56:00+09:00');
+  assert.equal(isKstToday('2026-09-08 00:00:00', now), true);
+  assert.equal(isKstToday('2026-09-08T00:30:00+09:00', now), true);
+  assert.equal(isKstToday('2026-09-07 23:59:59', now), false);
+  assert.equal(isKstToday('', now), false);
 });
