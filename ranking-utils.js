@@ -24,9 +24,34 @@
     return FREE_PASS_SET.has(normalizeRosterName(item?.userNick)) || FREE_PASS_SET.has(normalizeRosterName(item?.userId));
   }
 
+  function mabyeongdaeHistoryPattern() {
+    return /마(?:병대)?\s*[123](?:\s*(?:[,·\/&]|및|와|과)\s*(?:마(?:병대)?\s*)?[123])*(?:[^\/.\n!?]{0,32}?)(?:참가|참여|출전|경험)/gi;
+  }
+
+  function mabyeongdaeHistoryListPrefix(segment) {
+    const match = String(segment || '').match(/^마(?:병대)?\s*[123](?:\s*(?:[,·\/&]|및|와|과)\s*(?:마(?:병대)?\s*)?[123])*/i);
+    return match ? match[0] : '';
+  }
+
+  function getCommentMabyeongdaeSeasons(comment) {
+    const text = String(comment || '').replace(/\s+/g, ' ').trim();
+    const seasons = new Set();
+    for (const match of text.matchAll(mabyeongdaeHistoryPattern())) {
+      const prefix = mabyeongdaeHistoryListPrefix(match[0]);
+      for (const digit of prefix.match(/[123]/g) || []) seasons.add(Number(digit));
+    }
+    return [1, 2, 3].filter(season => seasons.has(season));
+  }
+
+  function stripMabyeongdaeParticipation(text) {
+    return String(text || '').replace(mabyeongdaeHistoryPattern(), ' ').replace(/\s+/g, ' ').trim();
+  }
+
   function getMabyeongdaeSeasons(item) {
     const candidates = [normalizeRosterName(item?.userNick), normalizeRosterName(item?.userId)].filter(Boolean);
-    return [1, 2, 3].filter(season => candidates.some(name => MABYEONGDAE_SEASON_SETS[season].has(name)));
+    const seasons = new Set([1, 2, 3].filter(season => candidates.some(name => MABYEONGDAE_SEASON_SETS[season].has(name))));
+    for (const season of getCommentMabyeongdaeSeasons(item?.comment)) seasons.add(season);
+    return [1, 2, 3].filter(season => seasons.has(season));
   }
 
   function hasMabyeongdaeSeason(item, season) {
@@ -182,8 +207,9 @@
     const text = String(comment || '').replace(/\s+/g, ' ').trim();
     if (!text || /후추/i.test(text)) return 'unknown';
 
-    const hasOfficer = /간부/i.test(text);
-    const hasSoldier = /병사|행정병/i.test(text) || /신청\s*분야\s*[:：]?\s*병(?:\s|$|[\/,.)])/i.test(text);
+    const currentText = stripMabyeongdaeParticipation(text);
+    const hasOfficer = /간부/i.test(currentText) || /(?:신청|지원)\s*분야\s*[:：-]?\s*간부/i.test(currentText);
+    const hasSoldier = /병사|행정병/i.test(currentText) || /(?:신청|지원)\s*분야\s*[:：-]?\s*병(?:사)?(?:\s|$|[\/,.)])/i.test(currentText);
 
     if (hasOfficer && hasSoldier) return 'unknown';
     if (hasOfficer) return 'officer';
