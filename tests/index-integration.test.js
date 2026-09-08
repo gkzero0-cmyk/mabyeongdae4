@@ -99,3 +99,17 @@ test('rank movement persists in local storage and is reused for 24 hours', () =>
   assert.match(js, /localStorage\.setItem\(STORAGE\.rankChanges/);
   assert.doesNotMatch(js, /rankChanges\s*=\s*nextChanges/);
 });
+
+test('new applicant counter is clickable and filters to KST today applicants', () => {
+  const html = read('index.html');
+  const js = read('app.js');
+  const css = read('styles.css');
+  assert.match(html, /<button[^>]+id="newApplicantFilterBtn"[^>]*>[^<]*새로운 신청자/);
+  assert.match(html, /aria-pressed="false"/);
+  assert.match(js, /newApplicantsOnly/);
+  assert.match(js, /newApplicantFilter/);
+  assert.match(js, /newApplicantsOnly\s*&&\s*!isKstToday\(item\.regDate\)/);
+  assert.match(js, /newApplicantsOnly\s*=\s*!newApplicantsOnly/);
+  assert.match(js, /새로운 신청자/);
+  assert.match(css, /badge-live\.active/);
+});
