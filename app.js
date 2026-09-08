@@ -2,13 +2,14 @@
   const REFRESH_MS = 1000;
   const STORAGE = {
     favorites: 'mabyeongdae4-up-ranking:favorites:v1',
-    types: 'mabyeongdae4-up-ranking:types:v1'
+    types: 'mabyeongdae4-up-ranking:types:v1',
+    rankChanges: 'mabyeongdae4-up-ranking:rank-changes:v1'
   };
   const {
     favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday, isKstToday,
     readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType,
     readObjectMap, exportSettings, importSettings, FREE_PASS_NAMES, isFreePassApplicant,
-    calculateUpStats, shouldCollapseComment
+    calculateUpStats, shouldCollapseComment, readRankChangeHistory, recordRankChange, getActiveRankChange
   } = window.RankingUtils;
 
   const $ = id => document.getElementById(id);
@@ -32,7 +33,7 @@
   let favoriteIds = readFavoriteIds(localStorage.getItem(STORAGE.favorites));
   let applicantTypes = readObjectMap(localStorage.getItem(STORAGE.types));
   let previousRanks = new Map();
-  let rankChanges = new Map();
+  let rankChanges = readRankChangeHistory(localStorage.getItem(STORAGE.rankChanges));
   let hasRankBaseline = false;
   const expandedComments = new Set();
   const fmt = new Intl.NumberFormat('ko-KR');
@@ -81,7 +82,7 @@
   }
 
   function rankChangeHtml(item) {
-    const change = rankChanges.get(favoriteKey(item));
+    const change = getActiveRankChange(rankChanges, favoriteKey(item));
     if (!change) return '';
     const arrow = change.direction === 'up' ? '▲' : '▼';
     return `<span class="rank-change ${change.direction}"><span class="from-to">${change.from}위 → ${change.to}위</span>${arrow}${change.delta}</span>`;
@@ -175,16 +176,17 @@
   function updateRankHistory(nextAll) {
     const ranked = sortRank(nextAll).map((item, index) => ({ ...item, rank: index + 1 }));
     const nextRanks = buildRankMap(ranked);
-    const nextChanges = new Map();
+    const now = Date.now();
+    rankChanges = readRankChangeHistory(rankChanges, now);
     if (hasRankBaseline) {
       for (const item of ranked) {
         const key = favoriteKey(item);
         const change = getRankChange(item.rank, previousRanks.get(key));
-        if (change) nextChanges.set(key, change);
+        if (change) rankChanges = recordRankChange(rankChanges, key, change, now);
       }
     }
     previousRanks = nextRanks;
-    rankChanges = nextChanges;
+    localStorage.setItem(STORAGE.rankChanges, JSON.stringify(rankChanges));
     hasRankBaseline = true;
   }
 
