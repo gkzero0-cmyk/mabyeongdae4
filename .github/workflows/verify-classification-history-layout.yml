@@ -1,0 +1,19 @@
+name: Verify classification history layout
+
+on:
+  push:
+    branches:
+      - feat/classification-history-layout-deploy
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - run: node --check app.js
+      - run: node --check ranking-utils.js
+      - run: node --check api/comments.js
