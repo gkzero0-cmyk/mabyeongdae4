@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  MABYEONGDAE_SEASON_NAMES,
   getMabyeongdaeSeasons,
   hasMabyeongdaeSeason,
   formatMabyeongdaeSeasons
@@ -27,4 +28,13 @@ test('season filter helper includes applicants who participated in the selected 
   assert.equal(hasMabyeongdaeSeason(item, 3), true);
   assert.equal(hasMabyeongdaeSeason({ userNick: '부르' }, 1), false);
   assert.equal(hasMabyeongdaeSeason({ userNick: '부르' }, 3), true);
+});
+
+test('provided season rosters include representative edge names', () => {
+  assert.ok(MABYEONGDAE_SEASON_NAMES[1].includes('갈푸짱'));
+  assert.ok(MABYEONGDAE_SEASON_NAMES[1].includes('화양'));
+  assert.ok(MABYEONGDAE_SEASON_NAMES[2].includes('쥐돌이쥐돌이'));
+  assert.ok(MABYEONGDAE_SEASON_NAMES[2].includes('힙비'));
+  assert.ok(MABYEONGDAE_SEASON_NAMES[3].includes('화양씨'));
+  assert.ok(MABYEONGDAE_SEASON_NAMES[3].includes('효재'));
 });
