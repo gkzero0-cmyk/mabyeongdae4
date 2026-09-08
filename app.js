@@ -16,7 +16,7 @@
   const els = {
     tbody: $('tbody'), total: $('totalCount'), topUp: $('topUp'), totalUp: $('totalUp'), averageUp: $('averageUp'),
     soldierCount: $('soldierCount'), officerCount: $('officerCount'), passCount: $('passCount'),
-    newApplicant: $('newApplicantCount'), search: $('searchInput'), status: $('status'), notice: $('notice'),
+    newApplicant: $('newApplicantCount'), newApplicantFilter: $('newApplicantFilterBtn'), search: $('searchInput'), status: $('status'), notice: $('notice'),
     refresh: $('refreshBtn'), activeFilterText: $('activeFilterText'),
     favoriteFilter: $('favoriteFilterBtn'), soldierFilter: $('soldierFilterBtn'), officerFilter: $('officerFilterBtn'),
     unknownFilter: $('unknownFilterBtn'), passFilter: $('passFilterBtn'), excludedFilter: $('excludedFilterBtn'),
@@ -30,6 +30,7 @@
   let typeFilter = 'all';
   let freePassMode = 'include';
   let favoritesOnly = false;
+  let newApplicantsOnly = false;
   let favoriteIds = readFavoriteIds(localStorage.getItem(STORAGE.favorites));
   let applicantTypes = readObjectMap(localStorage.getItem(STORAGE.types));
   let previousRanks = new Map();
@@ -95,6 +96,8 @@
     els.favoriteFilter.classList.toggle('active', favoritesOnly);
     els.passFilter.classList.toggle('active', freePassMode === 'include');
     els.excludedFilter.classList.toggle('active', freePassMode === 'exclude');
+    els.newApplicantFilter.classList.toggle('active', newApplicantsOnly);
+    els.newApplicantFilter.setAttribute('aria-pressed', newApplicantsOnly ? 'true' : 'false');
     els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === sortMode));
   }
 
@@ -116,6 +119,7 @@
       if (favoritesOnly && !favoriteSet.has(key)) return false;
       if (typeFilter !== 'all' && getType(item) !== typeFilter) return false;
       if (freePassMode === 'exclude' && isFreePassApplicant(item)) return false;
+      if (newApplicantsOnly && !isKstToday(item.regDate)) return false;
       if (!q) return true;
       return `${item.userNick} ${item.userId} ${item.comment}`.toLowerCase().includes(q);
     });
@@ -137,6 +141,7 @@
     if (typeFilter !== 'all') filterNames.push(typeLabel(typeFilter));
     if (freePassMode === 'exclude') filterNames.push('프리패스 제외');
     if (favoritesOnly) filterNames.push('즐겨찾기');
+    if (newApplicantsOnly) filterNames.push('새로운 신청자');
     els.activeFilterText.textContent = filterNames.length ? `${filterNames.join(' · ')} 필터 · ${fmt.format(view.length)}명 표시` : `전체 신청자 · ${fmt.format(view.length)}명 표시`;
 
     if (!view.length) {
@@ -234,6 +239,7 @@
   els.officerFilter.addEventListener('click', () => toggleTypeFilter('officer'));
   els.unknownFilter.addEventListener('click', () => toggleTypeFilter('unknown'));
   els.favoriteFilter.addEventListener('click', () => { favoritesOnly = !favoritesOnly; render(); });
+  els.newApplicantFilter.addEventListener('click', () => { newApplicantsOnly = !newApplicantsOnly; render(); });
   els.passFilter.addEventListener('click', () => { freePassMode = 'include'; render(); });
   els.excludedFilter.addEventListener('click', () => { freePassMode = 'exclude'; render(); });
   els.refresh.addEventListener('click', () => load(true));
