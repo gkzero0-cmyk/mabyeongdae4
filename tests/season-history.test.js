@@ -1,0 +1,30 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {
+  getMabyeongdaeSeasons,
+  hasMabyeongdaeSeason,
+  formatMabyeongdaeSeasons
+} = require('../ranking-utils');
+
+test('past season history detects single, multiple, all, and no participation', () => {
+  assert.deepEqual(getMabyeongdaeSeasons({ userNick: '부르' }), [3]);
+  assert.deepEqual(getMabyeongdaeSeasons({ userNick: '니니' }), [1, 2]);
+  assert.deepEqual(getMabyeongdaeSeasons({ userNick: '감스트' }), [1, 2, 3]);
+  assert.deepEqual(getMabyeongdaeSeasons({ userNick: '처음참가자' }), []);
+});
+
+test('past season history can fall back to user id and format combined badge text', () => {
+  assert.deepEqual(getMabyeongdaeSeasons({ userNick: '다른이름', userId: '유연서' }), [2, 3]);
+  assert.equal(formatMabyeongdaeSeasons({ userNick: '감스트' }), '마1·마2·마3');
+  assert.equal(formatMabyeongdaeSeasons({ userNick: '니니' }), '마1·마2');
+  assert.equal(formatMabyeongdaeSeasons({ userNick: '처음참가자' }), '');
+});
+
+test('season filter helper includes applicants who participated in the selected season', () => {
+  const item = { userNick: '감스트' };
+  assert.equal(hasMabyeongdaeSeason(item, 1), true);
+  assert.equal(hasMabyeongdaeSeason(item, 2), true);
+  assert.equal(hasMabyeongdaeSeason(item, 3), true);
+  assert.equal(hasMabyeongdaeSeason({ userNick: '부르' }, 1), false);
+  assert.equal(hasMabyeongdaeSeason({ userNick: '부르' }, 3), true);
+});
