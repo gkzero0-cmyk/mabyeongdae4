@@ -12,7 +12,7 @@ test('index identifies the site and source post', () => {
   assert.match(html, /id="newApplicantCount"/);
 });
 
-test('index exposes sorting, applicant, favorite and free-pass include/exclude filters', () => {
+test('index exposes sorting, applicant, favorite and free-pass include\/exclude filters', () => {
   const html = read('index.html');
   for (const id of ['favoriteFilterBtn', 'soldierFilterBtn', 'officerFilterBtn', 'passFilterBtn', 'excludedFilterBtn']) {
     assert.match(html, new RegExp(`id="${id}"`));
@@ -22,7 +22,7 @@ test('index exposes sorting, applicant, favorite and free-pass include/exclude f
   assert.match(html, /data-sort="oldest"/);
 });
 
-test('index wires split assets and settings import/export controls', () => {
+test('index wires split assets and settings import\/export controls', () => {
   const html = read('index.html');
   assert.match(html, /href="\.\/styles\.css"/);
   assert.match(html, /src="\.\/ranking-utils\.js"/);
@@ -88,4 +88,14 @@ test('classification and personal filters use requested semantic colors', () => 
   assert.match(css, /free-pass-badge[^}]*color:[^}]*purple|free-pass-badge[^}]*var\(--purple\)/);
   assert.match(css, /type-soldier[^}]*var\(--green\)/);
   assert.match(css, /type-officer[^}]*var\(--orange\)/);
+});
+
+test('rank movement persists in local storage and is reused for 12 hours', () => {
+  const js = read('app.js');
+  assert.match(js, /rankChanges:\s*'mabyeongdae4-up-ranking:rank-changes:v1'/);
+  assert.match(js, /readRankChangeHistory\(localStorage\.getItem\(STORAGE\.rankChanges\)\)/);
+  assert.match(js, /recordRankChange/);
+  assert.match(js, /getActiveRankChange/);
+  assert.match(js, /localStorage\.setItem\(STORAGE\.rankChanges/);
+  assert.doesNotMatch(js, /rankChanges\s*=\s*nextChanges/);
 });
