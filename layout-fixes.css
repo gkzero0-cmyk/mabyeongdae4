@@ -1,5 +1,5 @@
 th.user,td.user{width:285px}
 .names{min-width:0;flex:1;overflow:visible}
 .name-row{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
-.nick{flex:1 0 100%;max-width:100%;font-size:13px;font-weight:900;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.35}
+.nick{flex:1 0 auto;flex-basis:100%;max-width:100%;font-size:13px;font-weight:900;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.35}
 .name-row .new-badge,.name-row .free-pass-badge,.name-row .season-history-badge,.name-row .favorite-btn{flex:0 0 auto}
