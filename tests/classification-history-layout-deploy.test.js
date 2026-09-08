@@ -5,7 +5,7 @@ const path = require('node:path');
 const {
   detectApplicantType,
   getMabyeongdaeSeasons
-} = require('../ranking-utils');
+} = require('../ranking-overrides');
 
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -38,10 +38,12 @@ test('past season role statements add history badge without participation verb',
   assert.deepEqual(getMabyeongdaeSeasons({ userNick: '신규', comment: '마병대 3 방송을 재미있게 봤습니다.' }), []);
 });
 
-test('applicant nickname layout keeps full nickname visible and wraps badges below it', () => {
+test('browser loads ranking overrides before app and nickname layout keeps full name visible', () => {
   const html = read('index.html');
   const css = read('layout-fixes.css');
   assert.match(html, /layout-fixes\.css/);
+  assert.ok(html.indexOf('ranking-overrides.js') > html.indexOf('ranking-utils.js'));
+  assert.ok(html.indexOf('ranking-overrides.js') < html.indexOf('app.js'));
   assert.match(css, /\.name-row\{[^}]*flex-wrap:wrap/);
   assert.match(css, /\.nick\{[^}]*flex-basis:100%[^}]*white-space:normal[^}]*overflow:visible[^}]*text-overflow:clip/);
 });
