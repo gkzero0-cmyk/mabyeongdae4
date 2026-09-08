@@ -9,7 +9,8 @@
     favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday, isKstToday,
     readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType,
     readObjectMap, exportSettings, importSettings, FREE_PASS_NAMES, isFreePassApplicant,
-    calculateUpStats, shouldCollapseComment, readRankChangeHistory, recordRankChange, getActiveRankChange
+    calculateUpStats, shouldCollapseComment, readRankChangeHistory, recordRankChange, getActiveRankChange,
+    getMabyeongdaeSeasons, hasMabyeongdaeSeason, formatMabyeongdaeSeasons
   } = window.RankingUtils;
 
   const $ = id => document.getElementById(id);
@@ -21,7 +22,8 @@
     favoriteFilter: $('favoriteFilterBtn'), soldierFilter: $('soldierFilterBtn'), officerFilter: $('officerFilterBtn'),
     unknownFilter: $('unknownFilterBtn'), passFilter: $('passFilterBtn'), excludedFilter: $('excludedFilterBtn'),
     exportBtn: $('exportSettingsBtn'), importInput: $('importSettingsInput'),
-    sortButtons: [...document.querySelectorAll('[data-sort]')]
+    sortButtons: [...document.querySelectorAll('[data-sort]')],
+    seasonButtons: [...document.querySelectorAll('[data-season-filter]')]
   };
 
   let all = [];
@@ -31,6 +33,7 @@
   let freePassMode = 'include';
   let favoritesOnly = false;
   let newApplicantsOnly = false;
+  let seasonFilter = 0;
   let favoriteIds = readFavoriteIds(localStorage.getItem(STORAGE.favorites));
   let applicantTypes = readObjectMap(localStorage.getItem(STORAGE.types));
   let previousRanks = new Map();
@@ -98,6 +101,7 @@
     els.excludedFilter.classList.toggle('active', freePassMode === 'exclude');
     els.newApplicantFilter.classList.toggle('active', newApplicantsOnly);
     els.newApplicantFilter.setAttribute('aria-pressed', newApplicantsOnly ? 'true' : 'false');
+    els.seasonButtons.forEach(btn => btn.classList.toggle('active', Number(btn.dataset.seasonFilter) === seasonFilter));
     els.sortButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.sort === sortMode));
   }
 
@@ -120,6 +124,7 @@
       if (typeFilter !== 'all' && getType(item) !== typeFilter) return false;
       if (freePassMode === 'exclude' && isFreePassApplicant(item)) return false;
       if (newApplicantsOnly && !isKstToday(item.regDate)) return false;
+      if (seasonFilter && !hasMabyeongdaeSeason(item, seasonFilter)) return false;
       if (!q) return true;
       return `${item.userNick} ${item.userId} ${item.comment}`.toLowerCase().includes(q);
     });
@@ -142,6 +147,7 @@
     if (freePassMode === 'exclude') filterNames.push('프리패스 제외');
     if (favoritesOnly) filterNames.push('즐겨찾기');
     if (newApplicantsOnly) filterNames.push('새로운 신청자');
+    if (seasonFilter) filterNames.push(`마${seasonFilter}`);
     els.activeFilterText.textContent = filterNames.length ? `${filterNames.join(' · ')} 필터 · ${fmt.format(view.length)}명 표시` : `전체 신청자 · ${fmt.format(view.length)}명 표시`;
 
     if (!view.length) {
@@ -162,12 +168,14 @@
       const typeClass = currentType === 'soldier' ? 'type-soldier' : currentType === 'officer' ? 'type-officer' : 'type-unknown';
       const isNew = isKstToday(item.regDate);
       const freePass = isFreePassApplicant(item);
+      const pastSeasons = getMabyeongdaeSeasons(item);
+      const pastSeasonLabel = formatMabyeongdaeSeasons(item);
       const expanded = expandedComments.has(key);
       const collapsible = shouldCollapseComment(item.comment);
       const commentUrl = item.commentUrl || `https://www.sooplive.com/station/devil0108/post/206507027${item.commentNo ? `#comment_noti${encodeURIComponent(item.commentNo)}` : ''}`;
       html += `<tr data-rank="${item.rank}">
         <td class="rank"><div class="rank-stack"><span class="rank-badge">${item.rank}</span>${rankChangeHtml(item)}</div></td>
-        <td class="user"><div class="userbox">${avatar}<div class="names"><div class="name-row"><span class="nick">${esc(item.userNick)}</span>${isNew ? '<span class="new-badge">New</span>' : ''}${freePass ? '<span class="free-pass-badge">프리패스</span>' : ''}<button class="favorite-btn${favorite ? ' active' : ''}" data-key="${esc(key)}" type="button" title="${favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${favorite ? '★' : '☆'}</button></div><div class="id">${esc(item.userId || '-')}</div></div></div></td>
+        <td class="user"><div class="userbox">${avatar}<div class="names"><div class="name-row"><span class="nick">${esc(item.userNick)}</span>${isNew ? '<span class="new-badge">New</span>' : ''}${freePass ? '<span class="free-pass-badge">프리패스</span>' : ''}${pastSeasons.length ? `<span class="season-history-badge">${pastSeasonLabel}</span>` : ''}<button class="favorite-btn${favorite ? ' active' : ''}" data-key="${esc(key)}" type="button" title="${favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${favorite ? '★' : '☆'}</button></div><div class="id">${esc(item.userId || '-')}</div></div></div></td>
         <td class="comment"><div class="comment-wrap"><span class="comment-text${expanded ? ' expanded' : ' collapsed'}">${esc(item.comment || '-')}</span>${collapsible ? `<button class="comment-toggle-btn" type="button" data-key="${esc(key)}">${expanded ? '접기' : '더보기'}</button>` : ''}<span class="tag-auto">자동분류: ${typeLabel(autoType)}</span></div></td>
         <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"><option value="auto"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option><option value="soldier"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>
         <td class="up"><span class="upnum">${fmt.format(item.up || 0)}</span></td>
@@ -235,6 +243,11 @@
 
   els.search.addEventListener('input', render);
   els.sortButtons.forEach(btn => btn.addEventListener('click', () => { sortMode = btn.dataset.sort || 'up'; render(); }));
+  els.seasonButtons.forEach(btn => btn.addEventListener('click', () => {
+    const next = Number(btn.dataset.seasonFilter || 0);
+    seasonFilter = seasonFilter === next ? 0 : next;
+    render();
+  }));
   els.soldierFilter.addEventListener('click', () => toggleTypeFilter('soldier'));
   els.officerFilter.addEventListener('click', () => toggleTypeFilter('officer'));
   els.unknownFilter.addEventListener('click', () => toggleTypeFilter('unknown'));
