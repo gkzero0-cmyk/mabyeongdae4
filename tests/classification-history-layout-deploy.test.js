@@ -38,13 +38,12 @@ test('past season role statements add history badge without participation verb',
   assert.deepEqual(getMabyeongdaeSeasons({ userNick: '신규', comment: '마병대 3 방송을 재미있게 봤습니다.' }), []);
 });
 
-test('applicant nickname layout keeps full nickname visible and moves badges to separate row', () => {
-  const js = read('app.js');
-  const css = read('styles.css');
-  assert.match(js, /class=\"name-row\"[^>]*>\s*<span class=\"nick\"/);
-  assert.match(js, /class=\"badge-row\"/);
-  assert.match(css, /\.badge-row\{[^}]*flex-wrap:wrap/);
-  assert.match(css, /\.nick\{[^}]*white-space:normal[^}]*overflow:visible[^}]*text-overflow:clip/);
+test('applicant nickname layout keeps full nickname visible and wraps badges below it', () => {
+  const html = read('index.html');
+  const css = read('layout-fixes.css');
+  assert.match(html, /layout-fixes\.css/);
+  assert.match(css, /\.name-row\{[^}]*flex-wrap:wrap/);
+  assert.match(css, /\.nick\{[^}]*flex-basis:100%[^}]*white-space:normal[^}]*overflow:visible[^}]*text-overflow:clip/);
 });
 
 test('Vercel Node runtime is pinned to Node 24 major', () => {
