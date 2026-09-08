@@ -4,7 +4,7 @@
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
-  const RANK_CHANGE_TTL_MS = 12 * 60 * 60 * 1000;
+  const RANK_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
   const FREE_PASS_NAMES = Object.freeze(['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
   const FREE_PASS_SET = new Set(FREE_PASS_NAMES.map(normalizeRosterName));
 

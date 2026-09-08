@@ -143,28 +143,28 @@ test('isKstToday marks only applicants written today in Korea time', () => {
   assert.equal(isKstToday('', now), false);
 });
 
-test('rank change history keeps the latest movement visible for 12 hours', () => {
+test('rank change history keeps the latest movement visible for 24 hours', () => {
   const now = Date.parse('2026-09-09T03:45:00+09:00');
   const change = { direction: 'up', from: 18, to: 12, delta: 6 };
   const history = recordRankChange({}, 'comment:101', change, now);
-  assert.equal(RANK_CHANGE_TTL_MS, 12 * 60 * 60 * 1000);
+  assert.equal(RANK_CHANGE_TTL_MS, 24 * 60 * 60 * 1000);
   assert.deepEqual(getActiveRankChange(history, 'comment:101', now + RANK_CHANGE_TTL_MS - 1), {
     ...change,
     changedAt: now
   });
 });
 
-test('a later rank movement replaces the stored movement and restarts the 12 hour window', () => {
+test('a later rank movement replaces the stored movement and restarts the 24 hour window', () => {
   const start = Date.parse('2026-09-09T00:00:00+09:00');
   let history = recordRankChange({}, 'comment:101', { direction: 'up', from: 20, to: 15, delta: 5 }, start);
   const secondAt = start + 10 * 60 * 60 * 1000;
   history = recordRankChange(history, 'comment:101', { direction: 'down', from: 15, to: 17, delta: 2 }, secondAt);
-  assert.deepEqual(getActiveRankChange(history, 'comment:101', secondAt + 11 * 60 * 60 * 1000), {
+  assert.deepEqual(getActiveRankChange(history, 'comment:101', secondAt + 23 * 60 * 60 * 1000), {
     direction: 'down', from: 15, to: 17, delta: 2, changedAt: secondAt
   });
 });
 
-test('rank change history hides and removes entries after 12 hours without movement', () => {
+test('rank change history hides and removes entries after 24 hours without movement', () => {
   const changedAt = Date.parse('2026-09-08T12:00:00+09:00');
   const raw = JSON.stringify({
     'comment:101': { direction: 'up', from: 18, to: 12, delta: 6, changedAt },

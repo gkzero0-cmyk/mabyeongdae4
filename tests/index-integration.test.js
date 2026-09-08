@@ -90,7 +90,7 @@ test('classification and personal filters use requested semantic colors', () => 
   assert.match(css, /type-officer[^}]*var\(--orange\)/);
 });
 
-test('rank movement persists in local storage and is reused for 12 hours', () => {
+test('rank movement persists in local storage and is reused for 24 hours', () => {
   const js = read('app.js');
   assert.match(js, /rankChanges:\s*'mabyeongdae4-up-ranking:rank-changes:v1'/);
   assert.match(js, /readRankChangeHistory\(localStorage\.getItem\(STORAGE\.rankChanges\)\)/);
