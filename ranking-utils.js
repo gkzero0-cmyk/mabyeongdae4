@@ -4,6 +4,7 @@
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+  const RANK_CHANGE_TTL_MS = 12 * 60 * 60 * 1000;
   const FREE_PASS_NAMES = Object.freeze(['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
   const FREE_PASS_SET = new Set(FREE_PASS_NAMES.map(normalizeRosterName));
 
@@ -56,6 +57,57 @@
       to: current,
       delta: Math.abs(previous - current)
     };
+  }
+
+  function normalizeRankChangeEntry(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const direction = value.direction === 'up' || value.direction === 'down' ? value.direction : '';
+    const from = Number(value.from);
+    const to = Number(value.to);
+    const delta = Number(value.delta);
+    const changedAt = Number(value.changedAt);
+    if (!direction || !Number.isFinite(from) || !Number.isFinite(to) || !Number.isFinite(delta) || !Number.isFinite(changedAt)) return null;
+    if (from <= 0 || to <= 0 || delta <= 0 || changedAt <= 0) return null;
+    return { direction, from, to, delta, changedAt };
+  }
+
+  function isRankChangeActive(entry, nowMs = Date.now()) {
+    const normalized = normalizeRankChangeEntry(entry);
+    if (!normalized || !Number.isFinite(nowMs)) return false;
+    const age = nowMs - normalized.changedAt;
+    return age >= 0 && age < RANK_CHANGE_TTL_MS;
+  }
+
+  function readRankChangeHistory(raw, nowMs = Date.now()) {
+    let parsed;
+    try {
+      parsed = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : JSON.parse(String(raw || '{}'));
+    } catch {
+      return {};
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      const normalized = normalizeRankChangeEntry(value);
+      if (normalized && isRankChangeActive(normalized, nowMs)) out[String(key)] = normalized;
+    }
+    return out;
+  }
+
+  function recordRankChange(history, key, change, nowMs = Date.now()) {
+    const cleanKey = String(key || '').trim();
+    const next = readRankChangeHistory(history && typeof history === 'object' ? history : {}, nowMs);
+    if (!cleanKey || !change || typeof change !== 'object') return next;
+    const entry = normalizeRankChangeEntry({ ...change, changedAt: nowMs });
+    if (entry) next[cleanKey] = entry;
+    return next;
+  }
+
+  function getActiveRankChange(history, key, nowMs = Date.now()) {
+    const cleanKey = String(key || '').trim();
+    if (!cleanKey || !history || typeof history !== 'object') return null;
+    const entry = normalizeRankChangeEntry(history[cleanKey]);
+    return entry && isRankChangeActive(entry, nowMs) ? entry : null;
   }
 
   function parseKstDate(value) {
@@ -184,6 +236,10 @@
     FREE_PASS_NAMES,
     isFreePassApplicant,
     calculateUpStats,
-    shouldCollapseComment
+    shouldCollapseComment,
+    RANK_CHANGE_TTL_MS,
+    readRankChangeHistory,
+    recordRankChange,
+    getActiveRankChange
   };
 });
