@@ -20,7 +20,7 @@ function replaceRequired(source, search, replacement, label) {
   let source = read(path);
   if (!source.includes('function leadingRoleType(text)')) {
     const helper = String.raw`  function leadingRoleType(text) {
-    const firstLine = String(text || '')
+    const firstLine = stripNegativeOfficer(String(text || ''))
       .split(/\n+/)
       .map(line => line.trim())
       .find(Boolean);
@@ -50,12 +50,12 @@ function replaceRequired(source, search, replacement, label) {
   }
 }
 
-// 2) Browser: use one cacheable API URL for all visitors and avoid rebuilding
-// the full table when the normalized payload has not changed.
+// 2) Browser: keep the 1-second poll cadence, but use one cacheable API URL for
+// all visitors and avoid rebuilding the full table when the payload is unchanged.
 {
   const path = 'app.js';
   let source = read(path);
-  source = source.replace('const REFRESH_MS = 1000;', 'const REFRESH_MS = 1500;');
+  source = source.replace('const REFRESH_MS = 1500;', 'const REFRESH_MS = 1000;');
   if (!source.includes('let lastDataVersion')) {
     source = replaceRequired(source, '  let loading = false;\n', "  let loading = false;\n  let lastDataVersion = '';\n", 'last data version state');
   }
@@ -68,7 +68,7 @@ function replaceRequired(source, search, replacement, label) {
       'skip unchanged render'
     );
   }
-  source = source.replace("${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}", "${manual ? '수동 갱신 완료' : '실시간 자동 갱신 중'}");
+  source = source.replace("${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}", "${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}");
   write(path, source);
 }
 
