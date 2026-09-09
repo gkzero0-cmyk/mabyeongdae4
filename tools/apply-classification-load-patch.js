@@ -20,18 +20,30 @@ function replaceRequired(source, search, replacement, label) {
   let source = read(path);
   if (!source.includes('function leadingRoleType(text)')) {
     const helper = String.raw`  function leadingRoleType(text) {
-    const firstLine = stripNegativeOfficer(String(text || ''))
+    const rawFirstLine = String(text || '')
       .split(/\n+/)
       .map(line => line.trim())
       .find(Boolean);
-    if (!firstLine) return '';
+    if (!rawFirstLine) return '';
 
+    const firstLine = stripNegativeOfficer(rawFirstLine);
     const line = firstLine.replace(/^[^\p{L}\p{N}]*/u, '').trim();
     if (!line) return '';
 
-    const mixedOfficerFirst = /^(?:일반\s*)?간부\s*(?:OR|또는|혹은|&|\/|\|)\s*(?:행정병|훈련병|훈병|병사|병)(?=$|[\s\/|,;:：()[\]{}<>·&-])/iu;
-    const mixedSoldierFirst = /^(?:일반\s*)?(?:행정병|훈련병|훈병|병사|병)\s*(?:OR|또는|혹은|&|\/|\|)\s*간부(?=$|[\s\/|,;:：()[\]{}<>·&-])/iu;
-    if (mixedOfficerFirst.test(line) || mixedSoldierFirst.test(line)) return 'unknown';
+    const mixedPattern = /간부\s*(?:OR|또는|혹은|&|\/|\|)\s*(?:행정병|훈련병|훈병|병사|병)|(?:행정병|훈련병|훈병|병사|병)\s*(?:OR|또는|혹은|&|\/|\|)\s*간부/iu;
+    const field = line.match(/^(?:신청|지원)\s*분야\s*[\]】)]?\s*(?:[:：\/|\-]\s*)?(.+)$/iu);
+    if (field) {
+      const value = trimFieldValue(field[1]);
+      if (mixedPattern.test(value)) return 'unknown';
+      const hasOfficer = /간부/i.test(value);
+      const hasSoldier = hasSoldierRole(value);
+      if (hasOfficer && hasSoldier) return 'unknown';
+      if (hasOfficer) return 'officer';
+      if (hasSoldier) return 'soldier';
+      return '';
+    }
+
+    if (mixedPattern.test(line)) return 'unknown';
 
     const match = line.match(/^(?:일반\s*)?(간부|행정병|훈련병|훈병|병사|병)(?=$|[\s\/|,;:：()[\]{}<>·&-])/u);
     if (!match) return '';
@@ -43,7 +55,7 @@ function replaceRequired(source, search, replacement, label) {
     source = replaceRequired(
       source,
       "    if (!text) return 'unknown';\n\n    const currentText = stripNegativeOfficer(stripPastHistory(text));",
-      "    if (!text) return 'unknown';\n\n    const leadingType = leadingRoleType(text);\n    if (leadingType) return leadingType;\n\n    const currentText = stripNegativeOfficer(stripPastHistory(text));",
+      "    if (!text) return 'unknown';\n\n    const leadingType = leadingRoleType(comment);\n    if (leadingType) return leadingType;\n\n    const currentText = stripNegativeOfficer(stripPastHistory(text));",
       'classification precedence'
     );
     write(path, source);
@@ -68,7 +80,6 @@ function replaceRequired(source, search, replacement, label) {
       'skip unchanged render'
     );
   }
-  source = source.replace("${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}", "${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}");
   write(path, source);
 }
 
@@ -100,5 +111,14 @@ function replaceRequired(source, search, replacement, label) {
   const path = 'vercel.json';
   let source = read(path);
   source = source.replace('no-store, no-cache, must-revalidate', 'public, max-age=0, s-maxage=1, stale-while-revalidate=4');
+  write(path, source);
+}
+
+// 5) Force changed client scripts to refresh after deployment.
+{
+  const path = 'index.html';
+  let source = read(path);
+  source = source.replace(/ranking-overrides\.js\?v=[^\"]+/, 'ranking-overrides.js?v=20260909f');
+  source = source.replace(/app\.js\?v=[^\"]+/, 'app.js?v=20260909f');
   write(path, source);
 }
