@@ -36,6 +36,8 @@ index = Path('index.html')
 html = index.read_text(encoding='utf-8')
 old = './ranking-overrides.js?v=20260909d'
 new = './ranking-overrides.js?v=20260909e'
-if old not in html:
+if old in html:
+    html = html.replace(old, new, 1)
+elif new not in html:
     raise SystemExit('expected ranking-overrides cache-bust token not found')
-index.write_text(html.replace(old, new, 1), encoding='utf-8')
+index.write_text(html, encoding='utf-8')
