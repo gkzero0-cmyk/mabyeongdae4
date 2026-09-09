@@ -25,6 +25,15 @@ test('leading soldier declaration wins over narrative mentions of officers', () 
   ), 'soldier');
 });
 
+test('first-line labeled role wins over later narrative role words', () => {
+  assert.equal(utils.detectApplicantType(
+    '신청분야 :간부\n마병대 1, 2, 3 경험이 있고 예전에는 병사로 참여했습니다.'
+  ), 'officer');
+  assert.equal(utils.detectApplicantType(
+    '🐼 신청 분야 : 병사\n간부님들의 명령에 잘 따르겠습니다.'
+  ), 'soldier');
+});
+
 test('leading mixed role choices remain unknown', () => {
   assert.equal(utils.detectApplicantType('간부 OR 행정병 / 마병대 1,2,3 올 참가'), 'unknown');
   assert.equal(utils.detectApplicantType('간부&행정병 / 빙고게임 / 열심히 하겠습니다.'), 'unknown');
@@ -45,4 +54,10 @@ test('comments API enables short shared CDN caching and returns a stable payload
   assert.match(api, /stale-while-revalidate=4/);
   assert.match(api, /version/);
   assert.doesNotMatch(vercel, /no-store, no-cache, must-revalidate/);
+});
+
+test('changed classification and client code get a fresh browser cache key', () => {
+  const html = read('index.html');
+  assert.match(html, /ranking-overrides\.js\?v=20260909f/);
+  assert.match(html, /app\.js\?v=20260909f/);
 });
