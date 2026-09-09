@@ -4,7 +4,7 @@
   if (root) root.Mabyeongdae4ApplicantTypesV3 = map;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   // Source: mabyeongdae4_applicant_classification_2026-09-09_v3.xlsx
-  // 167 unique SOOP IDs. This file is the authoritative 병사/간부/미분류 source.
+  // 168 unique SOOP IDs. This file is the authoritative 병사/간부/미분류 source.
   return Object.freeze({
   "gofl2237": "unknown",
   "nmangoquince": "officer",
@@ -172,6 +172,7 @@
   "zuijjang": "soldier",
   "khj643863": "soldier",
   "fnds0231": "soldier",
-  "ranche4301": "soldier"
+  "ranche4301": "soldier",
+  "doramzi610": "soldier"
 });
 });
