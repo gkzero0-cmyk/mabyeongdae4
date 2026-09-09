@@ -28,6 +28,16 @@ test('normalize maps common SOOP comment fields and preserves UP count', () => {
   });
 });
 
+test('normalize decodes HTML entities in SOOP comments before classification clients consume them', () => {
+  const item = api.normalize({
+    user_id: 'chiya1207',
+    user_nick: '치야♡',
+    comment: '간부&amp;행정병 / 빙고게임 / 저마크개잘하구요재밌습니다 /',
+    p_comment_no: 121175059
+  });
+  assert.equal(item.comment, '간부&행정병 / 빙고게임 / 저마크개잘하구요재밌습니다 /');
+});
+
 test('extractUp tolerates renamed nested recommend fields', () => {
   assert.equal(api.extractUp({ metrics: { recommend_count: '77' } }), 77);
 });

@@ -31,6 +31,16 @@ test('edited explicit mixed-role comment automatically becomes unclassified', ()
   );
 });
 
+test('chiya ampersand mixed-role comment stays unclassified even when HTML-escaped', () => {
+  const utils = loadUtils();
+  const literal = { userId: 'chiya1207', comment: '간부&행정병 / 빙고게임 / 저마크개잘하구요재밌습니다 /' };
+  const escaped = { userId: 'chiya1207', comment: '간부&amp;행정병 / 빙고게임 / 저마크개잘하구요재밌습니다 /' };
+
+  assert.equal(utils.resolveApplicantType(literal, 'officer'), 'unknown');
+  assert.equal(utils.resolveApplicantType(escaped, 'officer'), 'unknown');
+  assert.equal(utils.getAuthoritativeApplicantType(escaped), '');
+});
+
 test('edited explicit soldier comment overrides the old workbook classification', () => {
   const utils = loadUtils();
   assert.equal(
