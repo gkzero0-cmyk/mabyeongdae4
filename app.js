@@ -3,14 +3,15 @@
   const STORAGE = {
     favorites: 'mabyeongdae4-up-ranking:favorites:v1',
     types: 'mabyeongdae4-up-ranking:types:v1',
-    rankChanges: 'mabyeongdae4-up-ranking:rank-changes:v1'
+    rankChanges: 'mabyeongdae4-up-ranking:rank-changes:v1',
+    rankChangesExcluded: 'mabyeongdae4-up-ranking:rank-changes-excluded:v1'
   };
   const {
     favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday, isKstToday,
     readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType,
-    readObjectMap, exportSettings, importSettings, FREE_PASS_NAMES, isFreePassApplicant,
+    readObjectMap, FREE_PASS_NAMES, isFreePassApplicant,
     calculateUpStats, shouldCollapseComment, readRankChangeHistory, recordRankChange, getActiveRankChange,
-    getMabyeongdaeSeasons, hasMabyeongdaeSeason, formatMabyeongdaeSeasons
+    getMabyeongdaeSeasons, hasMabyeongdaeSeason, formatMabyeongdaeSeasons, rankApplicants
   } = window.RankingUtils;
 
   const $ = id => document.getElementById(id);
@@ -21,7 +22,6 @@
     refresh: $('refreshBtn'), activeFilterText: $('activeFilterText'),
     favoriteFilter: $('favoriteFilterBtn'), soldierFilter: $('soldierFilterBtn'), officerFilter: $('officerFilterBtn'),
     unknownFilter: $('unknownFilterBtn'), passFilter: $('passFilterBtn'), excludedFilter: $('excludedFilterBtn'),
-    exportBtn: $('exportSettingsBtn'), importInput: $('importSettingsInput'),
     sortButtons: [...document.querySelectorAll('[data-sort]')],
     seasonButtons: [...document.querySelectorAll('[data-season-filter]')]
   };
@@ -37,7 +37,9 @@
   let favoriteIds = readFavoriteIds(localStorage.getItem(STORAGE.favorites));
   let applicantTypes = readObjectMap(localStorage.getItem(STORAGE.types));
   let previousRanks = new Map();
+  let previousRanksExcluded = new Map();
   let rankChanges = readRankChangeHistory(localStorage.getItem(STORAGE.rankChanges));
+  let rankChangesExcluded = readRankChangeHistory(localStorage.getItem(STORAGE.rankChangesExcluded));
   let hasRankBaseline = false;
   const expandedComments = new Set();
   const fmt = new Intl.NumberFormat('ko-KR');
@@ -54,16 +56,6 @@
     if (!timestamp) return String(value || '-');
     return new Intl.DateTimeFormat('ko-KR', { timeZone:'Asia/Seoul', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).format(new Date(timestamp));
   };
-
-  function sortRank(list) {
-    return [...list].sort((a, b) => {
-      const upDiff = Number(b.up || 0) - Number(a.up || 0);
-      if (upDiff) return upDiff;
-      const timeDiff = parseTime(a.regDate) - parseTime(b.regDate);
-      if (timeDiff) return timeDiff;
-      return Number(a.commentNo || 0) - Number(b.commentNo || 0);
-    });
-  }
 
   function sortView(ranked) {
     if (sortMode === 'newest') return [...ranked].sort((a,b) => parseTime(b.regDate) - parseTime(a.regDate) || Number(b.commentNo || 0) - Number(a.commentNo || 0));
@@ -86,7 +78,8 @@
   }
 
   function rankChangeHtml(item) {
-    const change = getActiveRankChange(rankChanges, favoriteKey(item));
+    const history = freePassMode === 'exclude' ? rankChangesExcluded : rankChanges;
+    const change = getActiveRankChange(history, favoriteKey(item));
     if (!change) return '';
     const arrow = change.direction === 'up' ? '▲' : '▼';
     return `<span class="rank-change ${change.direction}"><span class="from-to">${change.from}위 → ${change.to}위</span>${arrow}${change.delta}</span>`;
@@ -106,31 +99,33 @@
   }
 
   function render() {
-    const ranked = sortRank(all).map((item, index) => ({ ...item, rank: index + 1 }));
+    const overallRanked = rankApplicants(all);
+    const ranked = freePassMode === 'exclude'
+      ? rankApplicants(all, { excludeFreePass: true })
+      : overallRanked;
     const favoriteSet = new Set(favoriteIds);
     const q = els.search.value.trim().toLowerCase();
-    const counts = ranked.reduce((acc, item) => {
+    const counts = overallRanked.reduce((acc, item) => {
       const type = getType(item);
       if (type === 'soldier') acc.soldier++;
       if (type === 'officer') acc.officer++;
       if (isFreePassApplicant(item)) acc.freePass++;
       return acc;
     }, { soldier:0, officer:0, freePass:0 });
-    const upStats = calculateUpStats(ranked);
+    const upStats = calculateUpStats(overallRanked);
 
     const view = sortView(ranked).filter(item => {
       const key = favoriteKey(item);
       if (favoritesOnly && !favoriteSet.has(key)) return false;
       if (typeFilter !== 'all' && getType(item) !== typeFilter) return false;
-      if (freePassMode === 'exclude' && isFreePassApplicant(item)) return false;
       if (newApplicantsOnly && !isKstToday(item.regDate)) return false;
       if (seasonFilter && !hasMabyeongdaeSeason(item, seasonFilter)) return false;
       if (!q) return true;
       return `${item.userNick} ${item.userId} ${item.comment}`.toLowerCase().includes(q);
     });
 
-    els.total.textContent = fmt.format(ranked.length);
-    els.topUp.textContent = ranked.length ? fmt.format(ranked[0].up || 0) : '-';
+    els.total.textContent = fmt.format(overallRanked.length);
+    els.topUp.textContent = overallRanked.length ? fmt.format(overallRanked[0].up || 0) : '-';
     els.totalUp.textContent = fmt.format(upStats.total);
     els.averageUp.textContent = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 1 }).format(upStats.average);
     els.soldierCount.textContent = fmt.format(counts.soldier);
@@ -187,19 +182,31 @@
   }
 
   function updateRankHistory(nextAll) {
-    const ranked = sortRank(nextAll).map((item, index) => ({ ...item, rank: index + 1 }));
+    const ranked = rankApplicants(nextAll);
+    const rankedExcluded = rankApplicants(nextAll, { excludeFreePass: true });
     const nextRanks = buildRankMap(ranked);
+    const nextRanksExcluded = buildRankMap(rankedExcluded);
     const now = Date.now();
     rankChanges = readRankChangeHistory(rankChanges, now);
+    rankChangesExcluded = readRankChangeHistory(rankChangesExcluded, now);
+
     if (hasRankBaseline) {
       for (const item of ranked) {
         const key = favoriteKey(item);
         const change = getRankChange(item.rank, previousRanks.get(key));
         if (change) rankChanges = recordRankChange(rankChanges, key, change, now);
       }
+      for (const item of rankedExcluded) {
+        const key = favoriteKey(item);
+        const change = getRankChange(item.rank, previousRanksExcluded.get(key));
+        if (change) rankChangesExcluded = recordRankChange(rankChangesExcluded, key, change, now);
+      }
     }
+
     previousRanks = nextRanks;
+    previousRanksExcluded = nextRanksExcluded;
     localStorage.setItem(STORAGE.rankChanges, JSON.stringify(rankChanges));
+    localStorage.setItem(STORAGE.rankChangesExcluded, JSON.stringify(rankChangesExcluded));
     hasRankBaseline = true;
   }
 
@@ -280,39 +287,6 @@
     if (select.value === 'auto') delete applicantTypes[key]; else applicantTypes[key] = select.value;
     saveSettings();
     render();
-  });
-
-  els.exportBtn.addEventListener('click', () => {
-    const json = exportSettings({ favorites: favoriteIds, applicantTypes });
-    const blob = new Blob([json], { type:'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mabyeongdae4-ranking-settings-${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
-  els.importInput.addEventListener('change', async () => {
-    const file = els.importInput.files?.[0];
-    if (!file) return;
-    try {
-      const imported = importSettings(await file.text());
-      favoriteIds = imported.favorites;
-      applicantTypes = imported.applicantTypes;
-      saveSettings();
-      render();
-      els.notice.textContent = '설정 파일을 불러왔습니다.';
-      els.notice.classList.add('show');
-      setTimeout(() => els.notice.classList.remove('show'), 2200);
-    } catch (error) {
-      els.notice.textContent = `설정 파일을 불러오지 못했습니다. (${error.message})`;
-      els.notice.classList.add('show');
-    } finally {
-      els.importInput.value = '';
-    }
   });
 
   document.addEventListener('visibilitychange', () => { if (!document.hidden) load(false); });
