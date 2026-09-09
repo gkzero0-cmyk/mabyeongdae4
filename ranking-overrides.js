@@ -304,9 +304,43 @@
     return types.size === 1 ? [...types][0] : '';
   }
 
+  function leadingRoleType(text) {
+    const rawFirstLine = String(text || '')
+      .split(/\n+/)
+      .map(line => line.trim())
+      .find(Boolean);
+    if (!rawFirstLine) return '';
+
+    const firstLine = stripNegativeOfficer(rawFirstLine);
+    const line = firstLine.replace(/^[^\p{L}\p{N}]*/u, '').trim();
+    if (!line) return '';
+
+    const mixedPattern = /간부\s*(?:OR|또는|혹은|&|\/|\|)\s*(?:행정병|훈련병|훈병|병사|병)|(?:행정병|훈련병|훈병|병사|병)\s*(?:OR|또는|혹은|&|\/|\|)\s*간부/iu;
+    const field = line.match(/^(?:신청|지원)\s*분야\s*[\]】)]?\s*(?:[:：\/|\-]\s*)?(.+)$/iu);
+    if (field) {
+      const value = trimFieldValue(field[1]);
+      if (mixedPattern.test(value)) return 'unknown';
+      const hasOfficer = /간부/i.test(value);
+      const hasSoldier = hasSoldierRole(value);
+      if (hasOfficer && hasSoldier) return 'unknown';
+      if (hasOfficer) return 'officer';
+      if (hasSoldier) return 'soldier';
+      return '';
+    }
+
+    if (mixedPattern.test(line)) return 'unknown';
+
+    const match = line.match(/^(?:일반\s*)?(간부|행정병|훈련병|훈병|병사|병)(?=$|[\s\/|,;:：()[\]{}<>·&-])/u);
+    if (!match) return '';
+    return match[1] === '간부' ? 'officer' : 'soldier';
+  }
+
   function detectApplicantType(comment) {
     const text = String(comment || '').replace(/\s+/g, ' ').trim();
     if (!text) return 'unknown';
+
+    const leadingType = leadingRoleType(comment);
+    if (leadingType) return leadingType;
 
     const currentText = stripNegativeOfficer(stripPastHistory(text));
     const fieldType = explicitFieldType(currentText);

@@ -28,6 +28,7 @@
 
   let all = [];
   let loading = false;
+  let lastDataVersion = '';
   let sortMode = 'up';
   let typeFilter = 'all';
   let freePassMode = 'include';
@@ -218,13 +219,17 @@
       els.refresh.textContent = '↻ 불러오는 중';
     }
     try {
-      const response = await fetch(`/api/comments?t=${Date.now()}`, { cache:'no-store' });
+      const response = await fetch('/api/comments');
       const data = await response.json();
       if (!response.ok || !data.ok) throw new Error(data.error || `HTTP ${response.status}`);
       const nextAll = Array.isArray(data.comments) ? data.comments : [];
-      updateRankHistory(nextAll);
-      all = nextAll;
-      render();
+      const nextVersion = String(data.version || `${data.total || nextAll.length}:${data.fetchedAt || ''}`);
+      if (lastDataVersion !== nextVersion) {
+        updateRankHistory(nextAll);
+        all = nextAll;
+        lastDataVersion = nextVersion;
+        render();
+      }
       const time = new Date(data.fetchedAt || Date.now()).toLocaleTimeString('ko-KR', { timeZone:'Asia/Seoul', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
       els.status.innerHTML = `<strong>${time}</strong> 기준 · ${manual ? '수동 갱신 완료' : '1초 자동 갱신 중'}`;
       els.notice.classList.remove('show');
