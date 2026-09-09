@@ -8,7 +8,7 @@
   };
   const {
     favoriteKey, buildRankMap, getRankChange, parseKstDate, countKstToday, isKstToday,
-    readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType,
+    readFavoriteIds, toggleFavoriteId, detectApplicantType, resolveApplicantType, getAuthoritativeApplicantType,
     readObjectMap, FREE_PASS_NAMES, isFreePassApplicant,
     calculateUpStats, shouldCollapseComment, readRankChangeHistory, recordRankChange, getActiveRankChange,
     getMabyeongdaeSeasons, hasMabyeongdaeSeason, formatMabyeongdaeSeasons, rankApplicants
@@ -71,7 +71,7 @@
 
   function getType(item) {
     const key = favoriteKey(item);
-    return resolveApplicantType(item.comment, applicantTypes[key]);
+    return resolveApplicantType(item, applicantTypes[key]);
   }
 
   function typeLabel(type) {
@@ -159,7 +159,8 @@
       const avatar = item.userId
         ? `<a class="avatar-link" href="${station(item.userId)}" target="_blank" rel="noopener noreferrer" title="${esc(item.userNick)} 방송국 열기"><img class="avatar" src="${image}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="avatar-fallback" style="display:none">↗</span></a>`
         : '<span class="avatar-link"><span class="avatar-fallback">?</span></span>';
-      const autoType = detectApplicantType(item.comment);
+      const autoType = resolveApplicantType(item);
+      const authoritativeType = getAuthoritativeApplicantType(item);
       const currentType = getType(item);
       const typeClass = currentType === 'soldier' ? 'type-soldier' : currentType === 'officer' ? 'type-officer' : 'type-unknown';
       const isNew = isKstToday(item.regDate);
@@ -173,7 +174,7 @@
         <td class="rank"><div class="rank-stack"><span class="rank-badge">${item.rank}</span>${rankChangeHtml(item)}</div></td>
         <td class="user"><div class="userbox">${avatar}<div class="names"><div class="name-row"><span class="nick">${esc(item.userNick)}</span>${isNew ? '<span class="new-badge">New</span>' : ''}${freePass ? '<span class="free-pass-badge">프리패스</span>' : ''}${pastSeasons.length ? `<span class="season-history-badge">${pastSeasonLabel}</span>` : ''}<button class="favorite-btn${favorite ? ' active' : ''}" data-key="${esc(key)}" type="button" title="${favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}">${favorite ? '★' : '☆'}</button></div><div class="id">${esc(item.userId || '-')}</div></div></div></td>
         <td class="comment"><div class="comment-wrap"><span class="comment-text${expanded ? ' expanded' : ' collapsed'}">${esc(item.comment || '-')}</span>${collapsible ? `<button class="comment-toggle-btn" type="button" data-key="${esc(key)}">${expanded ? '접기' : '더보기'}</button>` : ''}<span class="tag-auto">자동분류: ${typeLabel(autoType)}</span></div></td>
-        <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"><option value="auto"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option><option value="soldier"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>
+        <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"${authoritativeType ? ' disabled title="v3 기준파일 최우선"' : ''}><option value="auto"${authoritativeType || applicantTypes[key] == null ? ' selected' : ''}>${authoritativeType ? `기준파일 (${typeLabel(authoritativeType)})` : `자동 (${typeLabel(autoType)})`}</option><option value="soldier"${!authoritativeType && applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${!authoritativeType && applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${!authoritativeType && applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>
         <td class="up"><span class="upnum">${fmt.format(item.up || 0)}</span></td>
         <td class="time">${esc(prettyDate(item.regDate))}</td>
         <td class="link"><a class="comment-link" href="${esc(commentUrl)}" target="_blank" rel="noopener noreferrer">신청 댓글 보기 ↗</a></td>

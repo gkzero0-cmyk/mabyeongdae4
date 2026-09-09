@@ -6,6 +6,10 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (base) {
+  const APPLICANT_TYPE_ID_MAP = typeof module === 'object' && module.exports
+    ? require('./applicant-types-v3')
+    : (typeof globalThis !== 'undefined' && globalThis.Mabyeongdae4ApplicantTypesV3) || Object.freeze({});
+
   // Source: mabyeongdae_1_2_3_SOOP_station_mapping_updated.xlsx / 사이트적용용.
   // Only ready=Y rows with a verified SOOP ID are included to avoid false matches.
   // 170 ready rows collapse to 169 unique IDs because miome3 is the same broadcaster
@@ -186,6 +190,12 @@
     return String(value || '').trim().toLowerCase();
   }
 
+  function getAuthoritativeApplicantType(itemOrId) {
+    const sourceValue = itemOrId && typeof itemOrId === 'object' ? itemOrId.userId : itemOrId;
+    const type = APPLICANT_TYPE_ID_MAP[normalizeSoopId(sourceValue)];
+    return ['soldier', 'officer', 'unknown'].includes(type) ? type : '';
+  }
+
   function normalizeDisplayName(value) {
     return String(value || '')
       .normalize('NFKC')
@@ -364,10 +374,14 @@
     return 'unknown';
   }
 
-  function resolveApplicantType(comment, manualType) {
+  function resolveApplicantType(itemOrComment, manualType) {
+    const item = itemOrComment && typeof itemOrComment === 'object' ? itemOrComment : null;
+    const authoritative = item ? getAuthoritativeApplicantType(item) : '';
+    if (authoritative) return authoritative;
+
     const manual = String(manualType || '').trim();
     if (['soldier', 'officer', 'unknown'].includes(manual)) return manual;
-    return detectApplicantType(comment);
+    return detectApplicantType(item ? item.comment : itemOrComment);
   }
 
   function rankApplicants(items, options = {}) {
@@ -389,6 +403,8 @@
   return {
     ...base,
     SOOP_SEASON_ID_MAP,
+    APPLICANT_TYPE_ID_MAP,
+    getAuthoritativeApplicantType,
     detectApplicantType,
     resolveApplicantType,
     getMabyeongdaeSeasons,
