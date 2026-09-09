@@ -19,3 +19,10 @@ test('applicant details assets are wired into the page', () => {
   assert.match(html, /applicant-details\.js/);
   assert.match(html, /applicant-details-ui\.js/);
 });
+
+test('clicking the visible comment text opens the applicant detail modal', () => {
+  const ui = fs.readFileSync(path.join(root, 'applicant-details-ui.js'), 'utf8');
+  assert.match(ui, /\.comment-text:not\(\[data-detail-ready\]\)/);
+  assert.match(ui, /comment\.classList\.add\('applicant-detail-trigger'\)/);
+  assert.match(ui, /comment\.setAttribute\('title', '신청서 상세 보기'\)/);
+});
