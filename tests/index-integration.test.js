@@ -22,13 +22,13 @@ test('index exposes sorting, applicant, favorite and free-pass include\/exclude 
   assert.match(html, /data-sort="oldest"/);
 });
 
-test('index wires split assets and settings import\/export controls', () => {
+test('index wires cache-busted split assets and omits settings transfer controls', () => {
   const html = read('index.html');
-  assert.match(html, /href="\.\/styles\.css"/);
-  assert.match(html, /src="\.\/ranking-utils\.js"/);
-  assert.match(html, /src="\.\/app\.js"/);
-  assert.match(html, /id="exportSettingsBtn"/);
-  assert.match(html, /id="importSettingsInput"/);
+  assert.match(html, /href="\.\/styles\.css\?v=[^"]+"/);
+  assert.match(html, /src="\.\/ranking-utils\.js\?v=[^"]+"/);
+  assert.match(html, /src="\.\/ranking-overrides\.js\?v=[^"]+"/);
+  assert.match(html, /src="\.\/app\.js\?v=[^"]+"/);
+  assert.doesNotMatch(html, /exportSettingsBtn|importSettingsInput|설정 내보내기|설정 불러오기/);
 });
 
 test('app renders station profile avatars, rank movement and classification controls', () => {
