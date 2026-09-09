@@ -11,12 +11,13 @@ const expected = {
   jaeparkk: 'officer',
   heda221112: 'soldier',
   kimtalggy: 'soldier',
-  lsh8071: 'soldier'
+  lsh8071: 'soldier',
+  doramzi610: 'soldier'
 };
 
-test('v3 workbook provides an authoritative applicant type for all 167 listed SOOP IDs', () => {
+test('v3 workbook provides an authoritative applicant type for all 168 listed SOOP IDs', () => {
   assert.ok(utils.APPLICANT_TYPE_ID_MAP);
-  assert.equal(Object.keys(utils.APPLICANT_TYPE_ID_MAP).length, 167);
+  assert.equal(Object.keys(utils.APPLICANT_TYPE_ID_MAP).length, 168);
   for (const [id, type] of Object.entries(expected)) {
     assert.equal(utils.APPLICANT_TYPE_ID_MAP[id], type, id);
   }
@@ -34,6 +35,10 @@ test('v3 workbook type wins over both browser manual state and comment auto-dete
   assert.equal(
     utils.resolveApplicantType({ userId: 'jaeparkk', comment: '병사로 신청합니다.' }, 'soldier'),
     'officer'
+  );
+  assert.equal(
+    utils.resolveApplicantType({ userId: 'doramzi610', comment: '-병사 -후추 하겠습니다~!' }),
+    'soldier'
   );
 });
 
@@ -56,6 +61,7 @@ test('browser classification paths pass the full applicant item so the SOOP ID a
 
 test('changed applicant authority code is cache-busted in the browser', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /ranking-overrides\.js\?v=20260909g/);
-  assert.match(html, /app\.js\?v=20260909g/);
+  assert.match(html, /applicant-types-v3\.js\?v=20260910a/);
+  assert.match(html, /ranking-overrides\.js\?v=20260910a/);
+  assert.match(html, /app\.js\?v=20260910a/);
 });
