@@ -70,10 +70,30 @@ function replaceRequired(source, search, replacement, label) {
     '      const autoType = resolveApplicantType(item);\n      const authoritativeType = getAuthoritativeApplicantType(item);\n      const currentType = getType(item);',
     'row authoritative type'
   );
-
-  const oldSelect = String.raw`        <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"><option value="auto"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option><option value="soldier"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>`;
-  const newSelect = String.raw`        <td class="type"><select class="applicant-type-select ${typeClass}" data-key="${esc(key)}"${authoritativeType ? ' disabled title="v3 기준파일 최우선"' : ''}><option value="auto"${authoritativeType || applicantTypes[key] == null ? ' selected' : ''}>${authoritativeType ? `기준파일 (${typeLabel(authoritativeType)})` : `자동 (${typeLabel(autoType)})`}</option><option value="soldier"${!authoritativeType && applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option><option value="officer"${!authoritativeType && applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option><option value="unknown"${!authoritativeType && applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option></select></td>`;
-  source = replaceRequired(source, oldSelect, newSelect, 'authoritative select display');
+  source = replaceRequired(
+    source,
+    "data-key=\"${esc(key)}\"><option value=\"auto\"${applicantTypes[key] == null ? ' selected' : ''}>자동 (${typeLabel(autoType)})</option>",
+    "data-key=\"${esc(key)}\"${authoritativeType ? ' disabled title=\"v3 기준파일 최우선\"' : ''}><option value=\"auto\"${authoritativeType || applicantTypes[key] == null ? ' selected' : ''}>${authoritativeType ? `기준파일 (${typeLabel(authoritativeType)})` : `자동 (${typeLabel(autoType)})`}</option>",
+    'authoritative select label'
+  );
+  source = replaceRequired(
+    source,
+    "<option value=\"soldier\"${applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option>",
+    "<option value=\"soldier\"${!authoritativeType && applicantTypes[key] === 'soldier' ? ' selected' : ''}>병사</option>",
+    'soldier option selection'
+  );
+  source = replaceRequired(
+    source,
+    "<option value=\"officer\"${applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option>",
+    "<option value=\"officer\"${!authoritativeType && applicantTypes[key] === 'officer' ? ' selected' : ''}>간부</option>",
+    'officer option selection'
+  );
+  source = replaceRequired(
+    source,
+    "<option value=\"unknown\"${applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option>",
+    "<option value=\"unknown\"${!authoritativeType && applicantTypes[key] === 'unknown' ? ' selected' : ''}>미분류</option>",
+    'unknown option selection'
+  );
   write(path, source);
 }
 
