@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="마병대 4 실시간 UP 랭킹" />
-  <meta name="theme-color" content="#070a0f" />
+  <meta id="themeColorMeta" name="theme-color" content="#070a0f" />
   <title>마병대 4 실시간 UP 랭킹</title>
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./layout-fixes.css" />
@@ -19,8 +19,9 @@
         <button class="btn primary" id="refreshBtn" type="button">↻ 지금 새로고침</button>
         <a class="btn" href="https://www.sooplive.com/station/devil0108/post/206507027" target="_blank" rel="noopener noreferrer">SOOP 원문 보기 ↗</a>
         <button class="btn badge-live" id="newApplicantFilterBtn" type="button" aria-pressed="false">새로운 신청자 <strong id="newApplicantCount">-</strong>명</button>
-        <button class="btn" id="exportSettingsBtn" type="button">설정 내보내기</button>
-        <label class="btn file-btn" for="importSettingsInput">설정 불러오기</label>
+        <button class="btn theme-toggle" id="themeToggleBtn" type="button" aria-pressed="false">☀ 라이트 모드</button>
+        <button class="btn" id="exportSettingsBtn" type="button" hidden>설정 내보내기</button>
+        <label class="btn file-btn" for="importSettingsInput" hidden>설정 불러오기</label>
         <input id="importSettingsInput" type="file" accept="application/json,.json" hidden />
       </div>
     </section>
