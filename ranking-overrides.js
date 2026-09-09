@@ -57,8 +57,16 @@
     return String(value || '').trim().toLowerCase();
   }
 
+  function normalizeDisplayName(value) {
+    return String(value || '')
+      .normalize('NFKC')
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, '');
+  }
+
   function participationHistoryPattern() {
-    return /마(?:병대)?\s*[123](?:\s*(?:[,·\/&]|및|와|과)\s*(?:마(?:병대)?\s*)?[123])*(?:[^\/.\n!?]{0,32}?)(?:참가|참여|출전|경험)/gi;
+    return /마(?:병대)?\s*[123](?:\s*(?:[,·\/&]|및|와|과)\s*(?:마(?:병대)?\s*)?[123])*(?:[^\/.\n!?]{0,32}?)(?:참가|참여|출전|경험|우승|준우승|수료|졸업)/gi;
   }
 
   function roleHistoryPattern() {
@@ -70,21 +78,45 @@
     return match ? match[0] : '';
   }
 
-  function commentRoleSeasons(comment) {
+  function commentHistorySeasons(comment) {
     const text = String(comment || '').replace(/\s+/g, ' ').trim();
     const seasons = new Set();
-    for (const match of text.matchAll(roleHistoryPattern())) {
-      const prefix = historyListPrefix(match[0]);
-      for (const digit of prefix.match(/[123]/g) || []) seasons.add(Number(digit));
+    for (const pattern of [participationHistoryPattern(), roleHistoryPattern()]) {
+      for (const match of text.matchAll(pattern)) {
+        const prefix = historyListPrefix(match[0]);
+        for (const digit of prefix.match(/[123]/g) || []) seasons.add(Number(digit));
+      }
     }
-    return seasons;
+    return [1, 2, 3].filter(season => seasons.has(season));
+  }
+
+  function nameFallbackSeasons(item) {
+    const candidates = [item?.userNick, item?.userId].map(normalizeDisplayName).filter(Boolean);
+    const rosters = base.MABYEONGDAE_SEASON_NAMES || {};
+    return [1, 2, 3].filter(season => {
+      const names = Array.isArray(rosters[season]) ? rosters[season] : [];
+      return names.some(name => candidates.includes(normalizeDisplayName(name)));
+    });
   }
 
   function getMabyeongdaeSeasons(item) {
-    const seasons = new Set(typeof base.getMabyeongdaeSeasons === 'function' ? base.getMabyeongdaeSeasons(item) : []);
     const idSeasons = SOOP_SEASON_ID_MAP[normalizeSoopId(item?.userId)] || [];
-    for (const season of idSeasons) seasons.add(season);
-    for (const season of commentRoleSeasons(item?.comment)) seasons.add(season);
+    const commentSeasons = commentHistorySeasons(item?.comment);
+    let seasons;
+
+    if (idSeasons.length) {
+      seasons = new Set(idSeasons);
+    } else if (commentSeasons.length) {
+      // Explicit self-reported history is more reliable than a possibly reused/decorated nickname.
+      seasons = new Set();
+    } else {
+      seasons = new Set(nameFallbackSeasons(item));
+      if (!seasons.size && typeof base.getMabyeongdaeSeasons === 'function') {
+        for (const season of base.getMabyeongdaeSeasons(item)) seasons.add(season);
+      }
+    }
+
+    for (const season of commentSeasons) seasons.add(season);
     return [1, 2, 3].filter(season => seasons.has(season));
   }
 
@@ -111,11 +143,32 @@
       .trim();
   }
 
+  function hasStandaloneSoldierToken(text) {
+    return /(?:^|[^\p{L}\p{N}])병(?=$|[^\p{L}\p{N}])/u.test(String(text || ''));
+  }
+
+  function hasSoldierRole(text) {
+    const value = String(text || '');
+    return /훈련병|훈병|행정병|병사/i.test(value) || hasStandaloneSoldierToken(value);
+  }
+
+  function trimFieldValue(value) {
+    return String(value || '')
+      .split(/\s*(?:\/|\|)\s*(?=(?:마크|마병대|서버|경험|자기|소개|지원동기|특이사항))/i)[0]
+      .split(/(?:(?:마크\s*서버|마크서버|마병대)\s*경험|자기\s*소개|지원\s*동기|특이사항)\s*[:：]/i)[0]
+      .trim();
+  }
+
   function explicitFieldType(text) {
     const types = new Set();
-    const pattern = /(?:신청|지원)\s*분야\s*(?:[:：\/|-]\s*)?(훈련병|훈병|행정병|병사|병|간부)(?=\s|$|[,./()]|입니다|이에요|예요|임)/gi;
+    const pattern = /(?:신청|지원)\s*분야\s*(?:[:：\/|\-]\s*)?([^\n]{1,80})/gi;
     for (const match of String(text || '').matchAll(pattern)) {
-      types.add(match[1] === '간부' ? 'officer' : 'soldier');
+      const value = trimFieldValue(match[1]);
+      const hasOfficer = /간부/i.test(value);
+      const hasSoldier = hasSoldierRole(value);
+      if (hasOfficer && hasSoldier) return 'unknown';
+      if (hasOfficer) types.add('officer');
+      if (hasSoldier) types.add('soldier');
     }
     if (types.size > 1) return 'unknown';
     return types.size === 1 ? [...types][0] : '';
@@ -139,8 +192,7 @@
     if (hasSoldierIntent) return 'soldier';
 
     const hasOfficerWord = /간부/i.test(currentText);
-    const hasSoldierWord = /훈련병|훈병|행정병|병사/i.test(currentText)
-      || /(?:^|[\s:：,./()\-])병(?=$|[\s,./()\-])/i.test(currentText);
+    const hasSoldierWord = hasSoldierRole(currentText);
 
     if (hasOfficerWord && hasSoldierWord) return 'unknown';
     if (hasOfficerWord) return 'officer';
@@ -154,6 +206,22 @@
     return detectApplicantType(comment);
   }
 
+  function rankApplicants(items, options = {}) {
+    const excludeFreePass = Boolean(options.excludeFreePass);
+    const list = (Array.isArray(items) ? items : [])
+      .filter(item => !excludeFreePass || !(typeof base.isFreePassApplicant === 'function' && base.isFreePassApplicant(item)))
+      .slice()
+      .sort((a, b) => {
+        const upDiff = Number(b?.up || 0) - Number(a?.up || 0);
+        if (upDiff) return upDiff;
+        const parse = typeof base.parseKstDate === 'function' ? base.parseKstDate : value => Date.parse(value) || 0;
+        const timeDiff = parse(a?.regDate) - parse(b?.regDate);
+        if (timeDiff) return timeDiff;
+        return Number(a?.commentNo || 0) - Number(b?.commentNo || 0);
+      });
+    return list.map((item, index) => ({ ...item, rank: index + 1 }));
+  }
+
   return {
     ...base,
     SOOP_SEASON_ID_MAP,
@@ -161,6 +229,7 @@
     resolveApplicantType,
     getMabyeongdaeSeasons,
     hasMabyeongdaeSeason,
-    formatMabyeongdaeSeasons
+    formatMabyeongdaeSeasons,
+    rankApplicants
   };
 });
