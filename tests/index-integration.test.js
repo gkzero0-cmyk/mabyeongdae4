@@ -12,6 +12,20 @@ test('index identifies the site and source post', () => {
   assert.match(html, /id="newApplicantCount"/);
 });
 
+test('hero shows recruitment and event schedule in the right-side area', () => {
+  const html = read('index.html');
+  const css = read('layout-fixes.css');
+  assert.match(html, /class="hero-main"/);
+  assert.match(html, /class="hero-schedule"/);
+  assert.match(html, /모집날짜/);
+  assert.match(html, /2026년 9월 19일 23시 59분 까지/);
+  assert.match(html, /마병대 기간/);
+  assert.match(html, /2026년 9월 23일 21시 ~ 9월 28일 저녁까지/);
+  assert.match(css, /\.hero\{[^}]*display:grid/);
+  assert.match(css, /\.hero-schedule/);
+  assert.match(css, /@media\(max-width:900px\)[\s\S]*\.hero\{grid-template-columns:1fr/);
+});
+
 test('index exposes sorting, applicant, favorite and free-pass include\/exclude filters', () => {
   const html = read('index.html');
   for (const id of ['favoriteFilterBtn', 'soldierFilterBtn', 'officerFilterBtn', 'passFilterBtn', 'excludedFilterBtn']) {
