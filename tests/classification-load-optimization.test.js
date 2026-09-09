@@ -58,6 +58,6 @@ test('comments API enables short shared CDN caching and returns a stable payload
 
 test('changed classification and client code get a fresh browser cache key', () => {
   const html = read('index.html');
-  assert.match(html, /ranking-overrides\.js\?v=20260909f/);
-  assert.match(html, /app\.js\?v=20260909f/);
+  assert.match(html, /ranking-overrides\.js\?v=20260909g/);
+  assert.match(html, /app\.js\?v=20260909g/);
 });
