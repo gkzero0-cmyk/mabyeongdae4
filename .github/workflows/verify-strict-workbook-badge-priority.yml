@@ -7,7 +7,7 @@ permissions:
   contents: write
 jobs:
   patch-and-verify:
-    if: github.event.head_commit.message == 'chore: apply strict badge priority via CI'
+    if: github.event.head_commit.message == 'chore: run strict badge patch and live audit'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,50 +15,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Apply authoritative workbook priority
-        run: |
-          python <<'PY'
-          from pathlib import Path
-          import re
-
-          path = Path('ranking-overrides.js')
-          text = path.read_text(encoding='utf-8')
-          pattern = re.compile(r"  function getMabyeongdaeSeasons\(item\) \{.*?^  \}\n\n  function hasMabyeongdaeSeason", re.S | re.M)
-          replacement = '''  function getMabyeongdaeSeasons(item) {
-            const idSeasons = SOOP_SEASON_ID_MAP[normalizeSoopId(item?.userId)] || [];
-            // The updated workbook is authoritative whenever a verified SOOP ID exists.
-            // Do not merge nickname or self-reported comment history into a verified mapping.
-            if (idSeasons.length) return [...idSeasons];
-
-            const commentSeasons = commentHistorySeasons(item?.comment);
-            let seasons;
-            if (commentSeasons.length) {
-              // Explicit self-reported history is more reliable than a possibly reused/decorated nickname.
-              seasons = new Set();
-            } else {
-              seasons = new Set(nameFallbackSeasons(item));
-              if (!seasons.size && typeof base.getMabyeongdaeSeasons === 'function') {
-                for (const season of base.getMabyeongdaeSeasons(item)) seasons.add(season);
-              }
-            }
-
-            for (const season of commentSeasons) seasons.add(season);
-            return [1, 2, 3].filter(season => seasons.has(season));
-          }
-
-          function hasMabyeongdaeSeason'''
-          updated, count = pattern.subn(replacement, text, count=1)
-          if count != 1:
-            raise SystemExit(f'expected one getMabyeongdaeSeasons block, replaced {count}')
-          path.write_text(updated, encoding='utf-8')
-
-          index = Path('index.html')
-          html = index.read_text(encoding='utf-8')
-          old = './ranking-overrides.js?v=20260909d'
-          new = './ranking-overrides.js?v=20260909e'
-          if old not in html:
-            raise SystemExit('expected ranking-overrides cache-bust token not found')
-          index.write_text(html.replace(old, new, 1), encoding='utf-8')
-          PY
+        run: python scripts/apply-strict-badge-fix.py
       - name: Run full regression suite
         run: npm test
       - name: Check syntax
@@ -70,32 +27,7 @@ jobs:
           node --check api/comments.js
       - name: Audit all live verified-ID applicants against workbook
         run: |
-          node <<'NODE'
-          const utils = require('./ranking-overrides');
-          const commentsApi = require('./api/comments');
-          (async () => {
-            const payload = await commentsApi.buildPayload();
-            const verified = [];
-            const mismatches = [];
-            for (const item of payload.comments || []) {
-              const id = String(item.userId || '').trim().toLowerCase();
-              const workbook = utils.SOOP_SEASON_ID_MAP[id];
-              if (!workbook) continue;
-              const current = utils.getMabyeongdaeSeasons(item);
-              verified.push({ id, nick: item.userNick, workbook, current });
-              if (JSON.stringify(workbook) !== JSON.stringify(current)) {
-                mismatches.push({ id, nick: item.userNick, workbook, current, comment: item.comment });
-              }
-            }
-            console.log('LIVE_TOTAL', payload.total);
-            console.log('VERIFIED_ID_APPLICANTS', verified.length);
-            console.log('STRICT_PRIORITY_MISMATCHES', mismatches.length);
-            if (mismatches.length) {
-              console.log(JSON.stringify(mismatches, null, 2));
-              process.exit(1);
-            }
-          })().catch(err => { console.error(err); process.exit(1); });
-          NODE
+          node -e "const u=require('./ranking-overrides'),a=require('./api/comments');(async()=>{const p=await a.buildPayload();let v=0,m=[];for(const x of p.comments||[]){const id=String(x.userId||'').trim().toLowerCase(),w=u.SOOP_SEASON_ID_MAP[id];if(!w)continue;v++;const c=u.getMabyeongdaeSeasons(x);if(JSON.stringify(w)!==JSON.stringify(c))m.push({id,nick:x.userNick,workbook:w,current:c})}console.log('LIVE_TOTAL',p.total);console.log('VERIFIED_ID_APPLICANTS',v);console.log('STRICT_PRIORITY_MISMATCHES',m.length);if(m.length){console.log(JSON.stringify(m,null,2));process.exit(1)}})().catch(e=>{console.error(e);process.exit(1)})"
       - name: Commit verified fix
         run: |
           git config user.name "github-actions[bot]"
