@@ -6,8 +6,14 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (base) {
+  function normalizeRoleComment(comment) {
+    return String(comment || '')
+      .replace(/&(?:amp|#0*38|#x0*26);/gi, '&')
+      .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ');
+  }
+
   function hasExplicitLiveApplicantTypeSignal(comment) {
-    const raw = String(comment || '');
+    const raw = normalizeRoleComment(comment);
     const normalized = raw.replace(/\s+/g, ' ').trim();
     if (!normalized) return false;
 
@@ -45,18 +51,21 @@
 
   function resolveApplicantType(itemOrComment, manualType) {
     const item = itemOrComment && typeof itemOrComment === 'object' ? itemOrComment : null;
-    if (item && hasExplicitLiveApplicantTypeSignal(item.comment)) return detect(item.comment);
+    if (item && hasExplicitLiveApplicantTypeSignal(item.comment)) {
+      return detect(normalizeRoleComment(item.comment));
+    }
 
     const authoritative = item ? originalAuthority(item) : '';
     if (authoritative) return authoritative;
 
     const manual = String(manualType || '').trim();
     if (['soldier', 'officer', 'unknown'].includes(manual)) return manual;
-    return detect(item ? item.comment : itemOrComment);
+    return detect(normalizeRoleComment(item ? item.comment : itemOrComment));
   }
 
   return {
     ...base,
+    normalizeRoleComment,
     hasExplicitLiveApplicantTypeSignal,
     getAuthoritativeApplicantType,
     resolveApplicantType
