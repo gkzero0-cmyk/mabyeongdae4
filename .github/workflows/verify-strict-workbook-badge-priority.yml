@@ -1,15 +1,105 @@
-name: Verify strict workbook badge priority
+name: Apply and verify strict workbook badge priority
 on:
   push:
     branches:
       - fix/strict-workbook-badge-priority
+permissions:
+  contents: write
 jobs:
-  test:
+  patch-and-verify:
+    if: github.event.head_commit.message == 'chore: apply strict badge priority via CI'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x
-      - run: npm test
-      - run: node --check ranking-overrides.js
+      - name: Apply authoritative workbook priority
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('ranking-overrides.js')
+          text = path.read_text(encoding='utf-8')
+          pattern = re.compile(r"  function getMabyeongdaeSeasons\(item\) \{.*?^  \}\n\n  function hasMabyeongdaeSeason", re.S | re.M)
+          replacement = '''  function getMabyeongdaeSeasons(item) {
+            const idSeasons = SOOP_SEASON_ID_MAP[normalizeSoopId(item?.userId)] || [];
+            // The updated workbook is authoritative whenever a verified SOOP ID exists.
+            // Do not merge nickname or self-reported comment history into a verified mapping.
+            if (idSeasons.length) return [...idSeasons];
+
+            const commentSeasons = commentHistorySeasons(item?.comment);
+            let seasons;
+            if (commentSeasons.length) {
+              // Explicit self-reported history is more reliable than a possibly reused/decorated nickname.
+              seasons = new Set();
+            } else {
+              seasons = new Set(nameFallbackSeasons(item));
+              if (!seasons.size && typeof base.getMabyeongdaeSeasons === 'function') {
+                for (const season of base.getMabyeongdaeSeasons(item)) seasons.add(season);
+              }
+            }
+
+            for (const season of commentSeasons) seasons.add(season);
+            return [1, 2, 3].filter(season => seasons.has(season));
+          }
+
+          function hasMabyeongdaeSeason'''
+          updated, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+            raise SystemExit(f'expected one getMabyeongdaeSeasons block, replaced {count}')
+          path.write_text(updated, encoding='utf-8')
+
+          index = Path('index.html')
+          html = index.read_text(encoding='utf-8')
+          old = './ranking-overrides.js?v=20260909d'
+          new = './ranking-overrides.js?v=20260909e'
+          if old not in html:
+            raise SystemExit('expected ranking-overrides cache-bust token not found')
+          index.write_text(html.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Run full regression suite
+        run: npm test
+      - name: Check syntax
+        run: |
+          node --check app.js
+          node --check ranking-utils.js
+          node --check ranking-overrides.js
+          node --check theme.js
+          node --check api/comments.js
+      - name: Audit all live verified-ID applicants against workbook
+        run: |
+          node <<'NODE'
+          const utils = require('./ranking-overrides');
+          const commentsApi = require('./api/comments');
+          (async () => {
+            const payload = await commentsApi.buildPayload();
+            const verified = [];
+            const mismatches = [];
+            for (const item of payload.comments || []) {
+              const id = String(item.userId || '').trim().toLowerCase();
+              const workbook = utils.SOOP_SEASON_ID_MAP[id];
+              if (!workbook) continue;
+              const current = utils.getMabyeongdaeSeasons(item);
+              verified.push({ id, nick: item.userNick, workbook, current });
+              if (JSON.stringify(workbook) !== JSON.stringify(current)) {
+                mismatches.push({ id, nick: item.userNick, workbook, current, comment: item.comment });
+              }
+            }
+            console.log('LIVE_TOTAL', payload.total);
+            console.log('VERIFIED_ID_APPLICANTS', verified.length);
+            console.log('STRICT_PRIORITY_MISMATCHES', mismatches.length);
+            if (mismatches.length) {
+              console.log(JSON.stringify(mismatches, null, 2));
+              process.exit(1);
+            }
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ranking-overrides.js index.html
+          git commit -m "fix: make updated workbook authoritative for season badges"
+          git push origin HEAD:fix/strict-workbook-badge-priority
