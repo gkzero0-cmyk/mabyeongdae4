@@ -17,7 +17,7 @@ test('applicant details assets are wired into the page', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /applicant-details\.css/);
   assert.match(html, /applicant-details\.js/);
-  assert.match(html, /applicant-details-ui\.js/);
+  assert.match(html, /applicant-details-ui\.js\?v=20260910b/);
 });
 
 test('clicking the visible comment text opens the applicant detail modal', () => {
