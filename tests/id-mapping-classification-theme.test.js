@@ -22,13 +22,38 @@ test('SOOP station ID mapping from updated workbook adds verified season badges'
 
 test('updated mapping asset is cache-busted in the browser', () => {
   const html = read('index.html');
-  assert.match(html, /src="\.\/ranking-overrides\.js\?v=20260909d"/);
+  assert.match(html, /src="\.\/ranking-overrides\.js\?v=20260909e"/);
 });
 
-test('verified station ID seasons merge with explicit comment history', () => {
+test('verified workbook station ID is authoritative over conflicting comment history', () => {
   assert.deepEqual(
     utils.getMabyeongdaeSeasons({ userId: 'bach023', userNick: '울산큰고래', comment: '마병대 1 참가 경험 있습니다.' }),
-    [1, 2, 3]
+    [2, 3]
+  );
+
+  assert.deepEqual(
+    utils.getMabyeongdaeSeasons({
+      userId: 'heda221112',
+      userNick: '헤다ㆍ',
+      comment: '병사 / 마병대 1회 경험 有. 저번 마병대 참여 시 방송적으로 성장하고 싶다고 신청했습니다.'
+    }),
+    [2]
+  );
+
+  assert.deepEqual(
+    utils.getMabyeongdaeSeasons({
+      userId: 'chiy0u',
+      userNick: '치유+',
+      comment: '마병대1(면회만 했음), 마병대2(과호흡) 참가. 마병대3을 과호흡의 두려움으로 참가를 피했습니다.'
+    }),
+    [2]
+  );
+});
+
+test('unverified station IDs can still use explicit self-reported history fallback', () => {
+  assert.deepEqual(
+    utils.getMabyeongdaeSeasons({ userId: 'not-in-workbook', userNick: '새신청자', comment: '마병대 1, 3 참가 경험 있습니다.' }),
+    [1, 3]
   );
 });
 
