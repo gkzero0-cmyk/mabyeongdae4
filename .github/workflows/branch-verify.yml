@@ -81,7 +81,7 @@ jobs:
         run: |
           git config user.name "gkzero0-cmyk"
           git config user.email "gkzero0@gmail.com"
-          git add ranking-overrides.js app.js api/comments.js vercel.json
+          git add ranking-overrides.js app.js api/comments.js vercel.json index.html
           if ! git diff --cached --quiet; then
             git commit -m "fix: improve classification and shared live cache"
             git push origin HEAD:fix/classification-and-load-optimization
