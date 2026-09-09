@@ -39,11 +39,13 @@ test('settings transfer controls are hidden and theme toggle is visible', () => 
 });
 
 test('theme choice persists and light theme has dedicated styles', () => {
-  const js = read('app.js');
+  const html = read('index.html');
+  const js = read('theme.js');
   const css = `${read('styles.css')}\n${read('layout-fixes.css')}`;
-  assert.match(js, /theme:\s*'mabyeongdae4-up-ranking:theme:v1'/);
+  assert.match(html, /<script src="\.\/theme\.js"><\/script>/);
+  assert.match(js, /mabyeongdae4-up-ranking:theme:v1/);
   assert.match(js, /document\.documentElement\.dataset\.theme/);
-  assert.match(js, /localStorage\.setItem\(STORAGE\.theme/);
+  assert.match(js, /localStorage\.setItem\(STORAGE_KEY/);
   assert.match(js, /themeToggleBtn/);
   assert.match(css, /\[data-theme="light"\]/);
   assert.match(css, /color-scheme:\s*light/);
