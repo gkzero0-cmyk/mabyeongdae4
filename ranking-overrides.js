@@ -6,6 +6,57 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.RankingUtils = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (base) {
+  // Source: mabyeongdae_1_2_3_SOOP_station_mapping.xlsx / 사이트적용용.
+  // Only ready=Y rows with a verified SOOP ID are included to avoid false matches.
+  const SOOP_SEASON_ID_MAP = Object.freeze({
+    'devil0108': Object.freeze([1, 2, 3]),
+    'nila25': Object.freeze([1, 2, 3]),
+    'cnsgkcnehd74': Object.freeze([1, 2, 3]),
+    'hwt1014': Object.freeze([1, 2, 3]),
+    'hwayang3': Object.freeze([1, 2, 3]),
+    'tjrdbs999': Object.freeze([1, 2, 3]),
+    'rjsdnr115': Object.freeze([1, 3]),
+    'sikhye1004': Object.freeze([1]),
+    'bassokim1': Object.freeze([1]),
+    'honeys2': Object.freeze([1, 2]),
+    'wkdrn0405': Object.freeze([1]),
+    '5959700': Object.freeze([1, 2]),
+    'bb0rii': Object.freeze([1]),
+    'jaeparkk': Object.freeze([1, 2, 3]),
+    'bibitrue': Object.freeze([1]),
+    '0e0e4e': Object.freeze([1, 2, 3]),
+    'gofl2237': Object.freeze([1, 2, 3]),
+    'gyeonjahee': Object.freeze([2, 3]),
+    'koo2202': Object.freeze([2, 3]),
+    'isq1158': Object.freeze([2]),
+    'khj011219': Object.freeze([2]),
+    'aksen7833': Object.freeze([2, 3]),
+    'niniming': Object.freeze([2, 3]),
+    'danchu17': Object.freeze([2, 3]),
+    'toocat030': Object.freeze([2, 3]),
+    'lika07': Object.freeze([2]),
+    'maoruyakr': Object.freeze([2]),
+    '42dadada': Object.freeze([2]),
+    'dnwnwjdqhr53': Object.freeze([2, 3]),
+    'legendhyuk': Object.freeze([2, 3]),
+    'bach023': Object.freeze([2, 3]),
+    'cctvno': Object.freeze([2, 3]),
+    'yjkim5500': Object.freeze([2, 3]),
+    'aa6232': Object.freeze([2]),
+    'suupercutie': Object.freeze([2]),
+    'lhtlgm': Object.freeze([2, 3]),
+    'miome3': Object.freeze([3]),
+    'yjw5067': Object.freeze([3]),
+    'chachki': Object.freeze([3]),
+    'choelssu': Object.freeze([3]),
+    'chunbongtv': Object.freeze([3]),
+    'callmeharuby': Object.freeze([3])
+  });
+
+  function normalizeSoopId(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
   function participationHistoryPattern() {
     return /마(?:병대)?\s*[123](?:\s*(?:[,·\/&]|및|와|과)\s*(?:마(?:병대)?\s*)?[123])*(?:[^\/.\n!?]{0,32}?)(?:참가|참여|출전|경험)/gi;
   }
@@ -31,6 +82,8 @@
 
   function getMabyeongdaeSeasons(item) {
     const seasons = new Set(typeof base.getMabyeongdaeSeasons === 'function' ? base.getMabyeongdaeSeasons(item) : []);
+    const idSeasons = SOOP_SEASON_ID_MAP[normalizeSoopId(item?.userId)] || [];
+    for (const season of idSeasons) seasons.add(season);
     for (const season of commentRoleSeasons(item?.comment)) seasons.add(season);
     return [1, 2, 3].filter(season => seasons.has(season));
   }
@@ -60,7 +113,7 @@
 
   function explicitFieldType(text) {
     const types = new Set();
-    const pattern = /(?:신청|지원)\s*분야\s*[:：-]?\s*(훈련병|훈병|행정병|병사|병|간부)(?=\s|$|[,./()]|입니다|이에요|예요|임)/gi;
+    const pattern = /(?:신청|지원)\s*분야\s*(?:[:：\/|-]\s*)?(훈련병|훈병|행정병|병사|병|간부)(?=\s|$|[,./()]|입니다|이에요|예요|임)/gi;
     for (const match of String(text || '').matchAll(pattern)) {
       types.add(match[1] === '간부' ? 'officer' : 'soldier');
     }
@@ -70,11 +123,12 @@
 
   function detectApplicantType(comment) {
     const text = String(comment || '').replace(/\s+/g, ' ').trim();
-    if (!text || /후추/i.test(text)) return 'unknown';
+    if (!text) return 'unknown';
 
     const currentText = stripNegativeOfficer(stripPastHistory(text));
     const fieldType = explicitFieldType(currentText);
     if (fieldType) return fieldType;
+    if (/후추/i.test(currentText)) return 'unknown';
 
     const hasOfficerIntent = /간부\s*(?:로\s*)?(?:신청|지원)/i.test(currentText);
     const hasSoldierIntent = /(?:훈련병|훈병|행정병|병사)\s*(?:로\s*)?(?:신청|지원)/i.test(currentText)
@@ -102,6 +156,7 @@
 
   return {
     ...base,
+    SOOP_SEASON_ID_MAP,
     detectApplicantType,
     resolveApplicantType,
     getMabyeongdaeSeasons,
