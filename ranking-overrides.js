@@ -230,12 +230,13 @@
 
   function getMabyeongdaeSeasons(item) {
     const idSeasons = SOOP_SEASON_ID_MAP[normalizeSoopId(item?.userId)] || [];
+    // The updated workbook is authoritative whenever a verified SOOP ID exists.
+    // Do not merge nickname or self-reported comment history into a verified mapping.
+    if (idSeasons.length) return [...idSeasons];
+
     const commentSeasons = commentHistorySeasons(item?.comment);
     let seasons;
-
-    if (idSeasons.length) {
-      seasons = new Set(idSeasons);
-    } else if (commentSeasons.length) {
+    if (commentSeasons.length) {
       // Explicit self-reported history is more reliable than a possibly reused/decorated nickname.
       seasons = new Set();
     } else {
