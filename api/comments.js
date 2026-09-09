@@ -63,13 +63,24 @@ function buildCommentUrl(commentNo) {
   return clean ? `${POST_URL}#comment_noti${encodeURIComponent(clean)}` : POST_URL;
 }
 
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&(?:amp|#0*38|#x0*26);/gi, '&')
+    .replace(/&(?:quot|#0*34|#x0*22);/gi, '"')
+    .replace(/&(?:apos|#0*39|#x0*27);/gi, "'")
+    .replace(/&(?:lt|#0*60|#x0*3c);/gi, '<')
+    .replace(/&(?:gt|#0*62|#x0*3e);/gi, '>')
+    .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ');
+}
+
 function normalize(raw) {
   const userId = String(pick(raw, ['user_id','userId','writer_id','writerId','member_id','memberId','bj_id']) || '').trim();
   const userNick = String(pick(raw, ['user_nick','userNick','nickname','nick_name','writer_nick','writerNick','user_name']) || userId || '알 수 없음').trim();
-  const comment = String(pick(raw, ['comment','contents','content','memo','text','comment_content','commentText']) || '')
-    .replace(/<br\s*\/?\s*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .trim();
+  const comment = decodeHtmlEntities(
+    String(pick(raw, ['comment','contents','content','memo','text','comment_content','commentText']) || '')
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+  ).trim();
   const regDate = String(pick(raw, ['reg_date','regDate','created_at','createdAt','write_date','writeDate','date']) || '').trim();
   const commentNo = String(pick(raw, ['p_comment_no','comment_no','commentNo','comment_id','commentId','no','id']) || '').trim();
   const explicitCommentUrl = String(pick(raw, ['comment_url','commentUrl','link_url','linkUrl','url']) || '').trim();
@@ -169,6 +180,7 @@ handler.POST_URL = POST_URL;
 handler.SOOP_API = SOOP_API;
 handler.extractUp = extractUp;
 handler.buildCommentUrl = buildCommentUrl;
+handler.decodeHtmlEntities = decodeHtmlEntities;
 handler.normalize = normalize;
 handler.fetchPage = fetchPage;
 handler.buildPayload = buildPayload;
