@@ -9,6 +9,7 @@
   <script src="./theme.js?v=20260909c"></script>
   <link rel="stylesheet" href="./styles.css?v=20260909c" />
   <link rel="stylesheet" href="./layout-fixes.css?v=20260909d" />
+  <link rel="stylesheet" href="./applicant-details.css?v=20260910a" />
 </head>
 <body>
   <main class="wrap">
@@ -16,7 +17,7 @@
       <div class="hero-main">
         <div class="eyebrow"><span class="live-dot"></span> LIVE COMMENT RANKING</div>
         <h1>마병대 4 실시간 UP 랭킹</h1>
-        <p class="sub">SOOP 마병대 4 모집 게시글의 댓글을 실시간으로 불러와 UP 순위를 보여줍니다. 프로필을 누르면 신청자의 방송국으로 이동합니다.</p>
+        <p class="sub">SOOP 마병대 4 모집 게시글의 댓글을 실시간으로 불러와 UP 순위를 보여줍니다. 프로필을 누르면 방송국으로 이동하고, 신청자 이름을 누르면 신청서 상세 내용을 볼 수 있습니다.</p>
         <div class="hero-actions">
           <button class="btn primary" id="refreshBtn" type="button">↻ 지금 새로고침</button>
           <a class="btn" href="https://www.sooplive.com/station/devil0108/post/206507027" target="_blank" rel="noopener noreferrer">SOOP 원문 보기 ↗</a>
@@ -39,11 +40,11 @@
 
     <section class="stats" aria-label="랭킹 통계">
       <div class="stat"><span>전체 댓글</span><strong id="totalCount">-</strong></div>
-      <div class="stat"><span>현재 1위 UP</span><strong id="topUp">-</strong></div>
       <div class="stat"><span>총 UP</span><strong id="totalUp">-</strong></div>
       <div class="stat"><span>평균 UP</span><strong id="averageUp">-</strong></div>
       <div class="stat"><span>병사 신청자</span><strong id="soldierCount">-</strong></div>
       <div class="stat"><span>간부 신청자</span><strong id="officerCount">-</strong></div>
+      <div class="stat"><span>경력자</span><strong id="topUp">-</strong></div>
       <div class="stat"><span>프리패스</span><strong id="passCount">-</strong></div>
     </section>
 
@@ -97,13 +98,15 @@
       </table>
     </section>
 
-    <p class="foot">본 페이지는 공개된 SOOP 게시글 정보를 보기 쉽게 정렬하는 비공식 도구입니다. 즐겨찾기·분류 설정은 현재 브라우저에 저장되며, 프리패스 명단은 운영 기준 고정 명단을 사용합니다. SOOP 원문 데이터가 기준입니다.</p>
+    <p class="foot">본 페이지는 공개된 SOOP 게시글 정보를 보기 쉽게 정렬하는 비공식 도구입니다. 신청자 이름을 누르면 공개 신청 댓글의 신청 분야·마크서버경험·지원 이유·첨부 사진을 상세 보기로 확인할 수 있습니다. 즐겨찾기·분류 설정은 현재 브라우저에 저장되며, 프리패스 명단은 운영 기준 고정 명단을 사용합니다. SOOP 원문 데이터가 기준입니다.</p>
   </main>
   <script src="./ranking-utils.js?v=20260909c"></script>
   <script src="./applicant-types-v3.js?v=20260910a"></script>
   <script src="./ranking-overrides.js?v=20260910a"></script>
   <script src="./comment-edit-classification.js?v=20260910d"></script>
+  <script src="./applicant-details.js?v=20260910a"></script>
   <script src="./app.js?v=20260910a"></script>
   <script src="./application-field-ui.js?v=20260910c"></script>
+  <script src="./applicant-details-ui.js?v=20260910a"></script>
 </body>
 </html>
