@@ -15,7 +15,7 @@ test('SOOP station ID mapping from workbook adds verified season badges', () => 
   assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'hwt1014', userNick: '황원태', comment: '' }), [1, 2, 3]);
 });
 
-test('verified station ID seasons merge with name and comment history', () => {
+test('verified station ID seasons merge with explicit comment history', () => {
   assert.deepEqual(
     utils.getMabyeongdaeSeasons({ userId: 'bach023', userNick: '울산큰고래', comment: '마병대 1 참가 경험 있습니다.' }),
     [1, 2, 3]
@@ -30,10 +30,9 @@ test('explicit application fields accept slash separators and win over pepper te
   assert.equal(utils.detectApplicantType('지원 분야/ 간부 후추 가능합니다.'), 'officer');
 });
 
-test('settings transfer controls are hidden and theme toggle is visible', () => {
+test('settings transfer controls are absent and theme toggle is visible', () => {
   const html = read('index.html');
-  assert.match(html, /id="exportSettingsBtn"[^>]*hidden|hidden[^>]*id="exportSettingsBtn"/);
-  assert.match(html, /for="importSettingsInput"[^>]*hidden|hidden[^>]*for="importSettingsInput"/);
+  assert.doesNotMatch(html, /exportSettingsBtn|importSettingsInput|설정 내보내기|설정 불러오기/);
   assert.match(html, /id="themeToggleBtn"/);
   assert.match(html, /aria-pressed="false"/);
 });
@@ -42,7 +41,7 @@ test('theme choice persists and light theme has dedicated styles', () => {
   const html = read('index.html');
   const js = read('theme.js');
   const css = `${read('styles.css')}\n${read('layout-fixes.css')}`;
-  assert.match(html, /<script src="\.\/theme\.js"><\/script>/);
+  assert.match(html, /<script src="\.\/theme\.js\?v=[^"]+"><\/script>/);
   assert.match(js, /mabyeongdae4-up-ranking:theme:v1/);
   assert.match(js, /document\.documentElement\.dataset\.theme/);
   assert.match(js, /localStorage\.setItem\(STORAGE_KEY/);
