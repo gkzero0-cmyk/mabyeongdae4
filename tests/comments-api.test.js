@@ -24,7 +24,8 @@ test('normalize maps common SOOP comment fields and preserves UP count', () => {
     userNick: '테스터',
     comment: '병사 신청합니다\n잘 부탁드립니다',
     regDate: '2026-09-08 06:30:00',
-    up: 123
+    up: 123,
+    photoUrls: []
   });
 });
 
@@ -36,6 +37,23 @@ test('normalize decodes HTML entities in SOOP comments before classification cli
     p_comment_no: 121175059
   });
   assert.equal(item.comment, '간부&행정병 / 빙고게임 / 저마크개잘하구요재밌습니다 /');
+});
+
+test('normalize exposes applicant photo attachments and ignores profile images', () => {
+  const item = api.normalize({
+    user_id: 'photo01',
+    comment: '병사 신청합니다',
+    photo: { url: 'https://cdn.example.com/application.jpg' },
+    user_profile_image: 'https://cdn.example.com/profile.jpg',
+    attachments: [
+      { image_url: 'https://cdn.example.com/application-2.png' },
+      { image_url: 'https://cdn.example.com/application.jpg' }
+    ]
+  });
+  assert.deepEqual(item.photoUrls, [
+    'https://cdn.example.com/application.jpg',
+    'https://cdn.example.com/application-2.png'
+  ]);
 });
 
 test('extractUp tolerates renamed nested recommend fields', () => {
