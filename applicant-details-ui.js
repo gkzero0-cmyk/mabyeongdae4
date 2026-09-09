@@ -172,6 +172,15 @@
       nick.setAttribute('title', '신청서 상세 보기');
       nick.setAttribute('aria-label', `${nick.textContent.trim()} 신청서 상세 보기`);
     });
+    tbody.querySelectorAll('.comment-text:not([data-detail-ready])').forEach(comment => {
+      comment.dataset.detailReady = '1';
+      comment.classList.add('applicant-detail-trigger');
+      comment.setAttribute('role', 'button');
+      comment.setAttribute('tabindex', '0');
+      comment.setAttribute('title', '신청서 상세 보기');
+      const nick = comment.closest('tr')?.querySelector('.nick')?.textContent.trim() || '신청자';
+      comment.setAttribute('aria-label', `${nick} 신청서 상세 보기`);
+    });
   }
 
   async function openFromTrigger(trigger) {
