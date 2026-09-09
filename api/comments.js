@@ -73,6 +73,48 @@ function decodeHtmlEntities(value) {
     .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ');
 }
 
+function normalizeAssetUrl(value) {
+  const url = String(value || '').trim();
+  if (!url) return '';
+  if (url.startsWith('//')) return `https:${url}`;
+  return /^https?:\/\//i.test(url) ? url : '';
+}
+
+function extractPhotoUrls(raw) {
+  const out = [];
+  const seen = new Set();
+
+  function add(value) {
+    const url = normalizeAssetUrl(value);
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    out.push(url);
+  }
+
+  function walk(value, path = '') {
+    if (value == null) return;
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) walk(value[i], `${path}[${i}]`);
+      return;
+    }
+    if (typeof value === 'object') {
+      for (const [key, child] of Object.entries(value)) {
+        const nextPath = path ? `${path}.${key}` : key;
+        walk(child, nextPath);
+      }
+      return;
+    }
+    if (typeof value !== 'string') return;
+    const lowerPath = path.toLowerCase();
+    if (/(profile|avatar|logo)/i.test(lowerPath)) return;
+    if (!/(attach|photo|image|img|upload|file)/i.test(lowerPath)) return;
+    add(value);
+  }
+
+  walk(raw);
+  return out;
+}
+
 function normalize(raw) {
   const userId = String(pick(raw, ['user_id','userId','writer_id','writerId','member_id','memberId','bj_id']) || '').trim();
   const userNick = String(pick(raw, ['user_nick','userNick','nickname','nick_name','writer_nick','writerNick','user_name']) || userId || '알 수 없음').trim();
@@ -91,7 +133,8 @@ function normalize(raw) {
     userNick,
     comment,
     regDate,
-    up: extractUp(raw)
+    up: extractUp(raw),
+    photoUrls: extractPhotoUrls(raw)
   };
 }
 
@@ -181,6 +224,8 @@ handler.SOOP_API = SOOP_API;
 handler.extractUp = extractUp;
 handler.buildCommentUrl = buildCommentUrl;
 handler.decodeHtmlEntities = decodeHtmlEntities;
+handler.normalizeAssetUrl = normalizeAssetUrl;
+handler.extractPhotoUrls = extractPhotoUrls;
 handler.normalize = normalize;
 handler.fetchPage = fetchPage;
 handler.buildPayload = buildPayload;
