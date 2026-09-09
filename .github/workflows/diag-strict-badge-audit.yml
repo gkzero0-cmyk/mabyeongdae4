@@ -1,0 +1,38 @@
+name: Diagnose strict badge priority
+on:
+  push:
+    branches:
+      - diag/strict-badge-audit
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+      - name: Audit live applicants
+        run: |
+          node <<'NODE'
+          const utils = require('./ranking-overrides');
+          const commentsApi = require('./api/comments');
+          (async () => {
+            const payload = await commentsApi.buildPayload();
+            const rows = [];
+            const affected = [];
+            for (const item of payload.comments || []) {
+              const id = String(item.userId || '').trim().toLowerCase();
+              const workbook = utils.SOOP_SEASON_ID_MAP[id];
+              if (!workbook) continue;
+              const current = utils.getMabyeongdaeSeasons(item);
+              rows.push({ id, nick: item.userNick, workbook, current });
+              if (JSON.stringify(workbook) !== JSON.stringify(current)) {
+                affected.push({ id, nick: item.userNick, workbook, current, comment: item.comment });
+              }
+            }
+            console.log('LIVE_TOTAL', payload.total);
+            console.log('VERIFIED_ID_APPLICANTS', rows.length);
+            console.log('STRICT_PRIORITY_MISMATCHES', affected.length);
+            console.log(JSON.stringify(affected, null, 2));
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
