@@ -22,7 +22,7 @@ test('SOOP station ID mapping from updated workbook adds verified season badges'
 
 test('updated mapping asset is cache-busted in the browser', () => {
   const html = read('index.html');
-  assert.match(html, /src="\.\/ranking-overrides\.js\?v=20260909e"/);
+  assert.match(html, /src="\.\/ranking-overrides\.js\?v=20260909f"/);
 });
 
 test('verified workbook station ID is authoritative over conflicting comment history', () => {

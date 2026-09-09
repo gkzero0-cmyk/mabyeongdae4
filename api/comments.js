@@ -1,8 +1,9 @@
+const crypto = require('node:crypto');
 const CHANNEL_ID = 'devil0108';
 const POST_ID = '206507027';
 const POST_URL = `https://www.sooplive.com/station/${CHANNEL_ID}/post/${POST_ID}`;
 const SOOP_API = `https://chapi.sooplive.co.kr/api/${CHANNEL_ID}/title/${POST_ID}/comment`;
-const CACHE_MS = 850;
+const CACHE_MS = 1200;
 
 let cachedPayload = null;
 let cachedAt = 0;
@@ -121,20 +122,24 @@ async function buildPayload() {
     const key = item.commentNo || `${item.userId}:${item.regDate}:${index}`;
     seen.set(key, item);
   });
+  const comments = [...seen.values()];
+  const version = crypto.createHash('sha1').update(JSON.stringify(comments)).digest('hex').slice(0, 16);
   return {
     ok: true,
     channelId: CHANNEL_ID,
     postId: POST_ID,
     postUrl: POST_URL,
     fetchedAt: new Date().toISOString(),
+    version,
     total: seen.size,
     pages: maxPages,
-    comments: [...seen.values()]
+    comments
   };
 }
 
 async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=1, stale-while-revalidate=4');
+  res.setHeader('CDN-Cache-Control', 'public, s-maxage=1, stale-while-revalidate=4');
   res.setHeader('Access-Control-Allow-Origin', '*');
   try {
     const now = Date.now();

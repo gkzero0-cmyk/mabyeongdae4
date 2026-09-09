@@ -6,7 +6,7 @@
   "headers": [
     {
       "source": "/api/(.*)",
-      "headers": [{"key": "Cache-Control", "value": "no-store, no-cache, must-revalidate"}]
+      "headers": [{"key": "Cache-Control", "value": "public, max-age=0, s-maxage=1, stale-while-revalidate=4"}]
     }
   ]
 }
