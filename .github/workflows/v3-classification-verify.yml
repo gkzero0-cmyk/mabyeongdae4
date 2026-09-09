@@ -5,6 +5,9 @@ on:
     branches:
       - fix/v3-authoritative-applicant-types
 
+permissions:
+  contents: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -13,9 +16,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Apply v3 workbook classification authority
+        run: node tools/apply-v3-authoritative-classification.js
       - run: npm test
+      - run: node --check applicant-types-v3.js
       - run: node --check app.js
       - run: node --check ranking-utils.js
       - run: node --check ranking-overrides.js
       - run: node --check theme.js
       - run: node --check api/comments.js
+      - name: Commit verified implementation
+        run: |
+          git config user.name "gkzero0-cmyk"
+          git config user.email "gkzero0@gmail.com"
+          git add applicant-types-v3.js ranking-overrides.js app.js index.html tests/v3-authoritative-classification.test.js
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: make v3 workbook applicant types authoritative"
+            git push origin HEAD:fix/v3-authoritative-applicant-types
+          fi
