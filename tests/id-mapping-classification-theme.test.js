@@ -7,12 +7,17 @@ const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const utils = require('../ranking-overrides');
 
-test('SOOP station ID mapping from workbook adds verified season badges', () => {
-  assert.equal(Object.keys(utils.SOOP_SEASON_ID_MAP || {}).length, 42);
+test('SOOP station ID mapping from updated workbook adds verified season badges', () => {
+  // updated workbook: 170 ready=Y rows collapse to 169 unique SOOP IDs
+  // because miome3 appears under two historical display names and must union seasons 2+3.
+  assert.equal(Object.keys(utils.SOOP_SEASON_ID_MAP || {}).length, 169);
   assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'devil0108', userNick: '새닉네임', comment: '' }), [1, 2, 3]);
-  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'bach023', userNick: '울...', comment: '' }), [2, 3]);
+  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'rose0957', userNick: '다른표시명', comment: '' }), [1]);
+  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'nmohoho', userNick: '달묘_', comment: '' }), [2, 3]);
+  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'heda221112', userNick: '헤다ㆍ', comment: '' }), [2]);
+  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'bureu2002', userNick: '부르', comment: '' }), [3]);
+  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'miome3', userNick: '고미호♡', comment: '' }), [2, 3]);
   assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'chunbongtv', userNick: '다른표시명', comment: '' }), [3]);
-  assert.deepEqual(utils.getMabyeongdaeSeasons({ userId: 'hwt1014', userNick: '황원태', comment: '' }), [1, 2, 3]);
 });
 
 test('verified station ID seasons merge with explicit comment history', () => {
