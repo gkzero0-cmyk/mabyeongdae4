@@ -55,9 +55,8 @@ test('history summary entry point and grouped season lists exist', () => {
   const detailUi = fs.readFileSync(path.join(__dirname, '..', 'applicant-details-ui.js'), 'utf8');
   assert.match(html, /id="historySummaryBtn"/);
   assert.match(html, />마병대 경력</);
-  assert.match(detailUi, /마병대 1/);
-  assert.match(detailUi, /마병대 2/);
-  assert.match(detailUi, /마병대 3/);
+  assert.match(detailUi, /\[1,2,3\]\.map\(season/);
+  assert.match(detailUi, /마병대 \$\{season\}/);
   assert.match(detailUi, /1·2·3 전부 참가/);
   assert.match(detailUi, /2·3 참가/);
 });
