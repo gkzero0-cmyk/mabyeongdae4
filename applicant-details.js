@@ -3,8 +3,8 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.ApplicantDetails = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const EXPERIENCE_HEADING = /^(?:(?:참여(?:한|해본)?|해본|경험(?:한)?)?\s*마크\s*서버(?:\s*경험)?|참여\s*경험\s*서버|마크\s*경험|마크\s*경력|서버\s*경험)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
-  const REASON_HEADING = /^(?:(?:각오\s*및\s*)?(?:[\p{L}\p{N}_.♥♡·]{1,30}\s*)?뽑(?:혀야|아야)\s*(?:하는|되는)?\s*이유|지원\s*(?:한|하는)?\s*이유|지원\s*사유|지원\s*동기|신청\s*(?:한|하는)?\s*이유|신청\s*사유|어필(?:\s*할\s*점|\s*자료|합니다!?)?|각오)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
+  const EXPERIENCE_HEADING = /^(?:(?:참여(?:한|해본)?|해본|경험(?:한)?)?\s*마크\s*서버(?:\s*(?:경험|경력))?|참여\s*경험\s*서버|참여\s*(?:마크\s*)?(?:서버\s*)?목록|마크\s*경험|마크\s*경력|서버\s*경험)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
+  const REASON_HEADING = /^(?:(?:각오\s*및\s*)?(?:[\p{L}\p{N}_.♥♡·]{1,30}\s*)?뽑(?:혀야|여야|아야)\s*(?:하는|되는)?\s*이유|지원\s*(?:한|하는)?\s*이유|지원\s*사유|지원\s*(?:동기|계기)|신청\s*(?:한|하는)?\s*이유|신청\s*사유|신청\s*계기|어필(?:\s*할\s*점|\s*자료|합니다!?)?|이유|각오)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
   const OTHER_HEADING = /^(?:특이\s*사항|컴퓨터(?:\s*및\s*마이크)?\s*세팅|방음|저의\s*장점|장점|참여\s*가능\s*시간|방송\s*가능\s*시간|추가\s*사항)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
 
   function normalizeSectionValue(value) {
@@ -27,7 +27,8 @@
     if (!candidate) return null;
     const match = candidate.match(regex);
     if (!match) return null;
-    const rest = normalizeSectionValue(candidate.slice(match[0].length));
+    const rawRest = normalizeSectionValue(candidate.slice(match[0].length));
+    const rest = /^[▼▽▶▷]+$/u.test(rawRest) ? '' : rawRest;
     return { field, rest };
   }
 
@@ -57,8 +58,10 @@
   function looksNarrativeParagraph(value) {
     const text = String(value || '').replace(/\s+/g, ' ').trim();
     if (!text) return false;
+    const plain = text.replace(/^[^\p{L}\p{N}]*/u, '').trim();
+    if (/^마병대\s*\d+(?:\s*\[[^\]]+\])?(?:\s*(?:참가|참여))?$/u.test(plain)) return false;
     if (text.length >= 70) return true;
-    return /(?:안녕|저는|제가|마병대|지원|신청|방송|성장|기회|열심|끝까지|참가|참여|보여|하고\s*싶|하겠습니다|입니다[.!]?)/u.test(text);
+    return /(?:안녕|저는|제가|지원|신청|방송|성장|기회|열심|끝까지|참가|참여|보여|하고\s*싶|하겠습니다|입니다[.!]?)/u.test(text);
   }
 
   function splitUnlabeledReasonFromExperience(value) {
@@ -154,6 +157,16 @@
     }
 
     const paragraphs = raw.split(/\n\s*\n+/).map(normalizeSectionValue).filter(Boolean);
+    if (paragraphs.length >= 2) {
+      const firstParagraphParts = splitSlashSections(paragraphs[0]);
+      if (firstParagraphParts.length >= 2 && looksLikeRoleSection(firstParagraphParts[0])) {
+        return {
+          applicationField: firstParagraphParts[0],
+          experience: firstParagraphParts.slice(1).join(' / '),
+          reason: paragraphs.slice(1).join('\n\n')
+        };
+      }
+    }
     if (paragraphs.length >= 3 && looksLikeRoleSection(paragraphs[0])) {
       return { applicationField: paragraphs[0], experience: paragraphs[1], reason: paragraphs.slice(2).join('\n\n') };
     }
