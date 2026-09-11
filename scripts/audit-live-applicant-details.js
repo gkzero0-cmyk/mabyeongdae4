@@ -25,6 +25,13 @@ function labelLines(text) {
   return nonEmptyLines(text).filter(line => /(?:신청\s*분야|지원\s*분야|마크.*(?:경험|서버)|서버.*경험|뽑.*이유|지원.*이유|신청.*이유|각오|어필)/u.test(line)).map(line => line.slice(0, 90));
 }
 
+function lineStartsWithHeading(raw, type) {
+  const experience = /^(?:[^\p{L}\p{N}\n]{0,12}|\d+\s*[.)]\s*)(?:(?:참여(?:한|해본)?|해본|경험(?:한)?)?\s*마크\s*서버(?:\s*경험)?|참여\s*경험\s*서버|마크\s*경험|마크\s*경력|서버\s*경험)(?=$|[\s:：=>\/\-|·\]】)>}])/u;
+  const reason = /^(?:[^\p{L}\p{N}\n]{0,12}|\d+\s*[.)]\s*)(?:(?:각오\s*및\s*)?(?:[\p{L}\p{N}_.♥♡·]{1,30}\s*)?뽑(?:혀야|아야)\s*(?:하는|되는)?\s*이유|지원\s*(?:한|하는)?\s*이유|지원\s*사유|지원\s*동기|신청\s*(?:한|하는)?\s*이유|신청\s*사유|어필(?:\s*할\s*점|\s*자료|합니다!?)?|각오)(?=$|[\s:：=>\/\-|·\]】)>}])/u;
+  const regex = type === 'experience' ? experience : reason;
+  return nonEmptyLines(raw).some(line => regex.test(line));
+}
+
 function compact(text, max=220) {
   const v = normalize(text).replace(/\s+/g, ' ');
   return v.length > max ? v.slice(0, max) + '…' : v;
@@ -67,8 +74,8 @@ function compact(text, max=220) {
     const slashRoleFirst = slash.length >= 3 && looksRole(slash[0]);
     const paragraphRoleFirst = paragraphParts.length >= 3 && looksRole(paragraphParts[0]);
     const lineRoleFirst = lines.length >= 3 && looksRole(lines[0]);
-    const headingExperience = /(?:마크\s*서버\s*경험|마크서버경험|마크\s*경험|참여\s*경험\s*서버)/u.test(raw);
-    const headingReason = /(?:뽑(?:혀|아)?야\s*하는\s*이유|지원\s*(?:하는\s*)?이유|지원\s*사유|신청\s*(?:한|하는)?\s*이유|신청\s*사유|각오)/u.test(raw);
+    const headingExperience = lineStartsWithHeading(raw, 'experience');
+    const headingReason = lineStartsWithHeading(raw, 'reason');
     const structured = slashRoleFirst || paragraphRoleFirst || lineRoleFirst || headingExperience || headingReason;
     if (structured) structuredCandidates++;
 
@@ -122,5 +129,5 @@ function compact(text, max=220) {
   console.log('AUDIT_ISSUES');
   issues.slice(0,120).forEach(issue => console.log(JSON.stringify(issue)));
 
-  if (adminMisclassified) process.exitCode = 2;
+  if (issues.length) process.exitCode = 2;
 })();
