@@ -20,3 +20,5 @@ node --check app.js
 node --check ranking-utils.js
 node --check api/comments.js
 ```
+
+<!-- production-redeploy-marker: 2026-09-11T09:50:00+09:00 -->
