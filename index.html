@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./styles.css?v=20260909c" />
   <link rel="stylesheet" href="./layout-fixes.css?v=20260909d" />
   <link rel="stylesheet" href="./applicant-details.css?v=20260910a" />
+  <link rel="stylesheet" href="./admin-history-overrides.css?v=20260911a" />
 </head>
 <body>
   <main class="wrap">
@@ -58,10 +59,10 @@
       <div class="control-group" aria-label="신청자 분류">
         <button class="filter-btn" id="soldierFilterBtn" type="button">병사</button>
         <button class="filter-btn" id="officerFilterBtn" type="button">간부</button>
-        <button class="filter-btn" id="unknownFilterBtn" type="button">미분류</button>
+        <button class="filter-btn" id="unknownFilterBtn" type="button">행정병</button>
       </div>
-      <div class="control-group season-group" aria-label="이전 참가">
-        <span class="control-label">이전 참가</span>
+      <div class="control-group season-group" aria-label="마병대 경력">
+        <button class="control-label history-summary-trigger" id="historySummaryBtn" type="button" title="마병대 경력 상세 보기">마병대 경력</button>
         <button class="filter-btn season-filter" id="season1FilterBtn" type="button" data-season-filter="1">마1</button>
         <button class="filter-btn season-filter" id="season2FilterBtn" type="button" data-season-filter="2">마2</button>
         <button class="filter-btn season-filter" id="season3FilterBtn" type="button" data-season-filter="3">마3</button>
@@ -98,15 +99,15 @@
       </table>
     </section>
 
-    <p class="foot">본 페이지는 공개된 SOOP 게시글 정보를 보기 쉽게 정렬하는 비공식 도구입니다. 신청자 이름이나 댓글을 누르면 공개 신청 댓글의 신청 분야·마크서버경험·지원 이유·첨부 사진을 상세 보기로 확인할 수 있습니다. 즐겨찾기·분류 설정은 현재 브라우저에 저장되며, 프리패스 명단은 운영 기준 고정 명단을 사용합니다. SOOP 원문 데이터가 기준입니다.</p>
+    <p class="foot">본 페이지는 공개된 SOOP 게시글 정보를 보기 쉽게 정렬하는 비공식 도구입니다. 신청자 이름이나 댓글을 누르면 공개 신청 댓글의 신청 분야·마크서버경험·지원 이유·첨부 사진을 상세 보기로 확인할 수 있습니다. 마병대 경력 뱃지와 집계는 검증된 SOOP ID 기준 마병대 1·2·3 참가 이력만 사용합니다. 즐겨찾기·분류 설정은 현재 브라우저에 저장되며, 프리패스 명단은 운영 기준 고정 명단을 사용합니다. SOOP 원문 데이터가 기준입니다.</p>
   </main>
   <script src="./ranking-utils.js?v=20260909c"></script>
   <script src="./applicant-types-v3.js?v=20260910a"></script>
   <script src="./ranking-overrides.js?v=20260910a"></script>
-  <script src="./comment-edit-classification.js?v=20260910d"></script>
-  <script src="./applicant-details.js?v=20260910a"></script>
+  <script src="./comment-edit-classification.js?v=20260911a"></script>
+  <script src="./applicant-details.js?v=20260911a"></script>
   <script src="./app.js?v=20260910a"></script>
-  <script src="./application-field-ui.js?v=20260910c"></script>
-  <script src="./applicant-details-ui.js?v=20260910b"></script>
+  <script src="./application-field-ui.js?v=20260911a"></script>
+  <script src="./applicant-details-ui.js?v=20260911a"></script>
 </body>
 </html>
