@@ -185,3 +185,17 @@ test('recognizes 신청 계기 as a reason boundary', () => {
   assert.equal(parsed.minecraftExperience, '그냥서버1, 지수의꿈, 옹삼골');
   assert.equal(parsed.reason, '데뷔 전부터 마병대를 보고 꼭 참여하고 싶었습니다.');
 });
+
+test('drops standalone decoration-only lines immediately after a section heading', () => {
+  const parsed = details.parseApplicantComment(`신청분야
+-병사
+
+마크 서버 경험
+ -당근서버,다뿌2,금쪽몬,블랙마인
+
+제가 뽑혀야 하는 이유
+-
+안녕하십니까 심해에서 올라온 세이렌! 세렌025라고 합니다!!`);
+  assert.equal(parsed.minecraftExperience, '-당근서버,다뿌2,금쪽몬,블랙마인');
+  assert.equal(parsed.reason, '안녕하십니까 심해에서 올라온 세이렌! 세렌025라고 합니다!!');
+});
