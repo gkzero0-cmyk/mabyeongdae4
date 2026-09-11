@@ -48,10 +48,15 @@
     return normalizeSectionValue(rest);
   }
 
+  function isDecorationOnlyLine(value) {
+    const text = String(value || '').trim();
+    return !!text && text.length <= 12 && !/[\p{L}\p{N}]/u.test(text);
+  }
+
   function trimCapturedLines(lines) {
     const copy = [...lines];
-    while (copy.length && !String(copy[0] || '').trim()) copy.shift();
-    while (copy.length && !String(copy[copy.length - 1] || '').trim()) copy.pop();
+    while (copy.length && (!String(copy[0] || '').trim() || isDecorationOnlyLine(copy[0]))) copy.shift();
+    while (copy.length && (!String(copy[copy.length - 1] || '').trim() || isDecorationOnlyLine(copy[copy.length - 1]))) copy.pop();
     return copy.join('\n').trim();
   }
 
