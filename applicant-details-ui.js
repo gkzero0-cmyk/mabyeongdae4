@@ -7,6 +7,7 @@
   const fmt = new Intl.NumberFormat('ko-KR');
   const topUp = document.getElementById('topUp');
   const tbody = document.getElementById('tbody');
+  const historySummaryBtn = document.getElementById('historySummaryBtn');
   let comments = [];
   let byUserId = new Map();
   let lastFetchAt = 0;
@@ -29,10 +30,10 @@
 
   function normalizeFieldLabel(text, item) {
     const label = String(text || '').trim();
-    const direct = label.match(/(병사|간부|미분류)/u);
-    if (direct) return direct[1];
+    const direct = label.match(/(행정병|병사|간부|미분류)/u);
+    if (direct) return direct[1] === '미분류' ? '행정병' : direct[1];
     const resolved = typeof utils.resolveApplicantType === 'function' ? utils.resolveApplicantType(item) : 'unknown';
-    return resolved === 'soldier' ? '병사' : resolved === 'officer' ? '간부' : '미분류';
+    return resolved === 'soldier' ? '병사' : resolved === 'officer' ? '간부' : '행정병';
   }
 
   function ensureModal() {
@@ -57,6 +58,28 @@
     document.body.classList.remove('detail-modal-open');
   }
 
+  function ensureHistoryModal() {
+    let modal = document.getElementById('historySummaryModal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'historySummaryModal';
+    modal.className = 'history-summary-modal';
+    modal.hidden = true;
+    modal.innerHTML = '<div class="applicant-detail-backdrop" data-history-close></div><section class="history-summary-dialog" role="dialog" aria-modal="true" aria-labelledby="historySummaryTitle"><div id="historySummaryContent"></div></section>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', event => {
+      if (event.target.closest('[data-history-close]')) closeHistoryModal();
+    });
+    return modal;
+  }
+
+  function closeHistoryModal() {
+    const modal = document.getElementById('historySummaryModal');
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    document.body.classList.remove('detail-modal-open');
+  }
+
   function photoGalleryHtml(item) {
     const urls = details.getApplicantPhotoUrls(item);
     if (!urls.length) {
@@ -74,8 +97,8 @@
     const fieldLabel = normalizeFieldLabel(selectedText, item);
     const fieldClass = fieldLabel === '병사' ? 'soldier' : fieldLabel === '간부' ? 'officer' : 'unknown';
     const commentUrl = item.commentUrl || `https://www.sooplive.com/station/devil0108/post/206507027${item.commentNo ? `#comment_noti${encodeURIComponent(item.commentNo)}` : ''}`;
-    const experience = parsed.minecraftExperience || '신청 댓글에서 별도 마크서버 경험 항목을 찾지 못했습니다.';
-    const reason = parsed.reason || '신청 댓글에서 별도 뽑혀야 하는 이유/지원 이유 항목을 찾지 못했습니다.';
+    const experience = parsed.minecraftExperience || '신청 댓글에서 마크서버경험 내용을 구분하지 못했습니다.';
+    const reason = parsed.reason || '신청 댓글에서 뽑혀야 하는 이유/지원 이유 내용을 구분하지 못했습니다.';
     const image = profileUrl(item.userId);
 
     const modal = ensureModal();
@@ -123,6 +146,52 @@
         <a class="detail-link primary" href="${esc(commentUrl)}" target="_blank" rel="noopener noreferrer">신청 댓글 원문 보기 ↗</a>
         <a class="detail-link" href="${esc(stationUrl(item.userId))}" target="_blank" rel="noopener noreferrer">방송국 보기 ↗</a>
       </footer>`;
+
+    modal.hidden = false;
+    document.body.classList.add('detail-modal-open');
+    modal.querySelector('.applicant-detail-close')?.focus();
+  }
+
+  function careerEntries() {
+    return comments
+      .map(item => ({ item, seasons: utils.getMabyeongdaeSeasons(item) }))
+      .filter(entry => entry.seasons.length)
+      .sort((a, b) => String(a.item.userNick || a.item.userId || '').localeCompare(String(b.item.userNick || b.item.userId || ''), 'ko'));
+  }
+
+  function careerNameChips(entries) {
+    if (!entries.length) return '<span class="history-empty">해당 신청자 없음</span>';
+    return `<div class="history-name-list">${entries.map(({ item }) => `<span class="history-name-chip">${esc(item.userNick || item.userId || '-')}</span>`).join('')}</div>`;
+  }
+
+  function renderHistorySummary() {
+    const entries = careerEntries();
+    const bySeason = season => entries.filter(entry => entry.seasons.includes(season));
+    const allThree = entries.filter(entry => [1,2,3].every(season => entry.seasons.includes(season)));
+    const twoThree = entries.filter(entry => entry.seasons.includes(2) && entry.seasons.includes(3) && !entry.seasons.includes(1));
+    const modal = ensureHistoryModal();
+    const content = modal.querySelector('#historySummaryContent');
+
+    content.innerHTML = `
+      <header class="history-summary-header">
+        <div>
+          <div class="history-kicker">검증된 SOOP ID 기준</div>
+          <h2 id="historySummaryTitle">마병대 경력</h2>
+          <p>현재 마병대4 신청자 중 마병대 1·2·3에 실제 참가 이력이 확인된 신청자를 집계합니다.</p>
+        </div>
+        <button class="applicant-detail-close" type="button" data-history-close aria-label="닫기">×</button>
+      </header>
+      <div class="history-summary-body">
+        <section class="history-total-card"><span>경력자 총합</span><strong>${fmt.format(entries.length)}명</strong><p>중복 없이 한 사람을 한 명으로 계산</p></section>
+        ${[1,2,3].map(season => {
+          const group = bySeason(season);
+          return `<section class="history-group"><div class="history-group-title"><strong>마병대 ${season}</strong><span>${fmt.format(group.length)}명</span></div>${careerNameChips(group)}</section>`;
+        }).join('')}
+        <div class="history-combo-grid">
+          <section class="history-group special"><div class="history-group-title"><strong>1·2·3 전부 참가</strong><span>${fmt.format(allThree.length)}명</span></div>${careerNameChips(allThree)}</section>
+          <section class="history-group special"><div class="history-group-title"><strong>2·3 참가</strong><span>${fmt.format(twoThree.length)}명</span></div>${careerNameChips(twoThree)}</section>
+        </div>
+      </div>`;
 
     modal.hidden = false;
     document.body.classList.add('detail-modal-open');
@@ -213,8 +282,18 @@
     new MutationObserver(applyExperiencedCount).observe(topUp, { childList: true, characterData: true, subtree: true });
   }
 
+  if (historySummaryBtn) {
+    historySummaryBtn.addEventListener('click', async () => {
+      await refreshData(Date.now() - lastFetchAt > 2000);
+      renderHistorySummary();
+    });
+  }
+
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeModal();
+    if (event.key === 'Escape') {
+      closeModal();
+      closeHistoryModal();
+    }
   });
 
   enhanceNames();
