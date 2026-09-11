@@ -16,8 +16,9 @@ test('experienced card replaces top-UP card and sits between officer and free-pa
 test('applicant details assets are wired into the page', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(html, /applicant-details\.css/);
-  assert.match(html, /applicant-details\.js/);
-  assert.match(html, /applicant-details-ui\.js\?v=20260910b/);
+  assert.match(html, /applicant-details\.js\?v=20260911a/);
+  assert.match(html, /applicant-details-ui\.js\?v=20260911a/);
+  assert.match(html, /admin-history-overrides\.css\?v=20260911a/);
 });
 
 test('clicking the visible comment text opens the applicant detail modal', () => {
