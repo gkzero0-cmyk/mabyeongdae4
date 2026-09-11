@@ -3,13 +3,13 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.ApplicantDetails = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const EXPERIENCE_HEADING = /^(?:(?:참여(?:한|해본)?|해본|경험(?:한)?)?\s*마크\s*서버(?:\s*경험)?|참여\s*경험\s*서버|마크\s*경험|마크\s*경력|서버\s*경험)(?=$|[\s:：=>\-|·\]】)>}])/iu;
-  const REASON_HEADING = /^(?:(?:각오\s*및\s*)?(?:[\p{L}\p{N}_.♥♡·]{1,30}\s*)?뽑(?:혀야|아야)\s*(?:하는|되는)?\s*이유|지원\s*(?:한|하는)?\s*이유|지원\s*사유|지원\s*동기|신청\s*(?:한|하는)?\s*이유|신청\s*사유|어필(?:\s*할\s*점|\s*자료|합니다!?)?|각오)(?=$|[\s:：=>\-|·\]】)>}])/iu;
-  const OTHER_HEADING = /^(?:특이\s*사항|컴퓨터(?:\s*및\s*마이크)?\s*세팅|방음|저의\s*장점|장점|참여\s*가능\s*시간|방송\s*가능\s*시간|추가\s*사항)(?=$|[\s:：=>\-|·\]】)>}])/iu;
+  const EXPERIENCE_HEADING = /^(?:(?:참여(?:한|해본)?|해본|경험(?:한)?)?\s*마크\s*서버(?:\s*경험)?|참여\s*경험\s*서버|마크\s*경험|마크\s*경력|서버\s*경험)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
+  const REASON_HEADING = /^(?:(?:각오\s*및\s*)?(?:[\p{L}\p{N}_.♥♡·]{1,30}\s*)?뽑(?:혀야|아야)\s*(?:하는|되는)?\s*이유|지원\s*(?:한|하는)?\s*이유|지원\s*사유|지원\s*동기|신청\s*(?:한|하는)?\s*이유|신청\s*사유|어필(?:\s*할\s*점|\s*자료|합니다!?)?|각오)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
+  const OTHER_HEADING = /^(?:특이\s*사항|컴퓨터(?:\s*및\s*마이크)?\s*세팅|방음|저의\s*장점|장점|참여\s*가능\s*시간|방송\s*가능\s*시간|추가\s*사항)(?=$|[\s:：=>\/\-|·\]】)>}])/iu;
 
   function normalizeSectionValue(value) {
     return String(value || '')
-      .replace(/^[\s:：>\-|·=\]】)>}]+/u, '')
+      .replace(/^[\s:：>\/\-|·=\]】)>}]+/u, '')
       .replace(/[\s]+$/u, '')
       .trim();
   }
