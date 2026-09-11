@@ -35,6 +35,12 @@ test('experience heading followed by one paragraph can fall through to an unlabe
   assert.equal(parsed.reason, '안녕하세요. 마병대에 참가해 성장하고 싶습니다!');
 });
 
+test('slash after a field heading is treated as a field separator, not experience content', () => {
+  const parsed = details.parseApplicantComment('신청분야/ 병사\n마크서버경험/ 지수의 꿈, 다이아랜딩, 그냥서버\n\n안녕하세요. 마병대를 정말 좋아해서 꼭 참여하고 싶습니다.');
+  assert.equal(parsed.minecraftExperience, '지수의 꿈, 다이아랜딩, 그냥서버');
+  assert.equal(parsed.reason, '안녕하세요. 마병대를 정말 좋아해서 꼭 참여하고 싶습니다.');
+});
+
 test('counts applicants with any verified season history once', () => {
   const items = [{userId:'a'}, {userId:'b'}, {userId:'c'}];
   const count = details.countExperiencedApplicants(items, item => item.userId === 'a' ? [1,2] : item.userId === 'b' ? [] : [3]);
