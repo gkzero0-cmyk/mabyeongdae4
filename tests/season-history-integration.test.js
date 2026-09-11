@@ -5,12 +5,14 @@ const path = require('node:path');
 
 const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 
-test('past season filters are exposed in the controls', () => {
+test('verified season filters and career summary are exposed in the controls', () => {
   const html = read('index.html');
   for (const id of ['season1FilterBtn', 'season2FilterBtn', 'season3FilterBtn']) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
-  assert.match(html, /이전 참가/);
+  assert.match(html, /id="historySummaryBtn"/);
+  assert.match(html, /마병대 경력/);
+  assert.doesNotMatch(html, />이전 참가</);
 });
 
 test('app renders combined past-season badges and filters by selected season', () => {
