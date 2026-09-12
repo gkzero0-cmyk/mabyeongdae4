@@ -5,7 +5,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
   const RANK_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
-  const FREE_PASS_NAMES = Object.freeze(['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
+  const FREE_PASS_NAMES = Object.freeze(['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래', '해리']);
   const FREE_PASS_SET = new Set(FREE_PASS_NAMES.map(normalizeRosterName));
   const MABYEONGDAE_SEASON_NAMES = Object.freeze({
     1: Object.freeze(['감스트','유소나','조경훈','르마','가습기','유설아','한세긴','화양','갈푸짱','삼성민','은초롱','지피티','고채린','거대별','김바쏘','김웰로','김챠멜','니니','니즈','단비가최고야','댕추','딸기슈몽이','라무','란쵸','리베','리브레','망야','멍보리','모나양','몽나','물초코','박재박','베지','비쥬','뿌요','삭비','서라0','세이나','야뿌','우메밍','유키라','윤키키','이투','초아','카나시','큐랑','키이세','킹냥이','타루','토뤼','파깡','피크리','하나마나','해리']),
