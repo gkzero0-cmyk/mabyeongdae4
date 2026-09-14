@@ -49,6 +49,15 @@ test('edited explicit soldier comment overrides the old workbook classification'
   );
 });
 
+test('first-choice role wins when ranked preferences are present', () => {
+  const utils = loadUtils();
+  const item = {
+    userId: 'kimhaetae',
+    comment: '마병대 시즌 4 지원자 김해태입니다.\n\n⭕신청분야 : 1지망 간부, 2지망 병사\n\n⭕서버경험 : RP 서버 경험 없음'
+  };
+  assert.equal(utils.resolveApplicantType(item, 'unknown'), 'officer');
+});
+
 test('narrative role words still fall back to the reviewed workbook value', () => {
   const utils = loadUtils();
   const item = { userId: 'heda221112', comment: '간부님들 말씀 잘 듣겠습니다.' };
