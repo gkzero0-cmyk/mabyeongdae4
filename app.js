@@ -21,7 +21,7 @@
     newApplicant: $('newApplicantCount'), newApplicantFilter: $('newApplicantFilterBtn'), search: $('searchInput'), status: $('status'), notice: $('notice'),
     refresh: $('refreshBtn'), activeFilterText: $('activeFilterText'),
     favoriteFilter: $('favoriteFilterBtn'), soldierFilter: $('soldierFilterBtn'), officerFilter: $('officerFilterBtn'),
-    unknownFilter: $('unknownFilterBtn'), passFilter: $('passFilterBtn'), excludedFilter: $('excludedFilterBtn'),
+    passFilter: $('passFilterBtn'), excludedFilter: $('excludedFilterBtn'),
     sortButtons: [...document.querySelectorAll('[data-sort]')],
     seasonButtons: [...document.querySelectorAll('[data-season-filter]')]
   };
@@ -89,7 +89,6 @@
   function updateFilterButtons() {
     els.soldierFilter.classList.toggle('active', typeFilter === 'soldier');
     els.officerFilter.classList.toggle('active', typeFilter === 'officer');
-    els.unknownFilter.classList.toggle('active', typeFilter === 'unknown');
     els.favoriteFilter.classList.toggle('active', favoritesOnly);
     els.passFilter.classList.toggle('active', freePassMode === 'include');
     els.excludedFilter.classList.toggle('active', freePassMode === 'exclude');
@@ -263,7 +262,6 @@
   }));
   els.soldierFilter.addEventListener('click', () => toggleTypeFilter('soldier'));
   els.officerFilter.addEventListener('click', () => toggleTypeFilter('officer'));
-  els.unknownFilter.addEventListener('click', () => toggleTypeFilter('unknown'));
   els.favoriteFilter.addEventListener('click', () => { favoritesOnly = !favoritesOnly; render(); });
   els.newApplicantFilter.addEventListener('click', () => { newApplicantsOnly = !newApplicantsOnly; render(); });
   els.passFilter.addEventListener('click', () => { freePassMode = 'include'; render(); });
