@@ -12,6 +12,7 @@ const expected = {
   heda221112: 'soldier',
   kimtalggy: 'soldier',
   lsh8071: 'soldier',
+  kimhaetae: 'officer',
   doramzi610: 'soldier'
 };
 
@@ -61,7 +62,7 @@ test('browser classification paths pass the full applicant item so the SOOP ID a
 
 test('changed applicant authority code is cache-busted in the browser', () => {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.match(html, /applicant-types-v3\.js\?v=20260910a/);
+  assert.match(html, /applicant-types-v3\.js\?v=20260914a/);
   assert.match(html, /ranking-overrides\.js\?v=20260910a/);
-  assert.match(html, /app\.js\?v=20260910a/);
+  assert.match(html, /app\.js\?v=20260914a/);
 });
