@@ -116,10 +116,11 @@ test('settings export and import round-trip normalized metadata', () => {
 });
 
 test('free pass roster is fixed and matches applicant nickname or id', () => {
-  assert.deepEqual(FREE_PASS_NAMES, ['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래']);
+  assert.deepEqual(FREE_PASS_NAMES, ['니니', '망구랑', '유연서', '부르', '새잎', '울산큰고래', '해리']);
   assert.equal(isFreePassApplicant({ userNick: '니니', userId: 'someone' }), true);
   assert.equal(isFreePassApplicant({ userNick: '다른이름', userId: '유연서' }), true);
   assert.equal(isFreePassApplicant({ userNick: ' 울산큰고래 ', userId: 'whale' }), true);
+  assert.equal(isFreePassApplicant({ userNick: '해리', userId: 'gofl2237' }), true);
   assert.equal(isFreePassApplicant({ userNick: '헤리', userId: 'golf2237' }), false);
 });
 
