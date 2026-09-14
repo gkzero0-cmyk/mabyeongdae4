@@ -11,14 +11,13 @@ test('classification header is displayed as 신청분야', () => {
   assert.equal(html.includes('<th class="type">신청분야</th>'), true);
 });
 
-test('internal unknown classification is presented to users as 행정병', () => {
-  assert.equal(ui.includes('행정병'), true);
-  assert.equal(ui.includes('미분류'), true);
-  assert.equal(ui.includes('MutationObserver'), true);
-  assert.match(html, /id="unknownFilterBtn"[^>]*>행정병</);
+test('administrative soldier is not exposed as its own classification or application-field label', () => {
+  assert.equal(html.includes('id="unknownFilterBtn"'), false);
+  assert.equal(ui.includes('행정병'), false);
+  assert.equal(ui.includes('미분류'), false);
 });
 
 test('UI helper is loaded after app.js with a fresh cache version', () => {
-  assert.equal(html.includes('./application-field-ui.js?v=20260911a'), true);
-  assert.ok(html.indexOf('./application-field-ui.js?v=20260911a') > html.indexOf('./app.js'));
+  assert.equal(html.includes('./application-field-ui.js?v=20260914a'), true);
+  assert.ok(html.indexOf('./application-field-ui.js?v=20260914a') > html.indexOf('./app.js'));
 });
