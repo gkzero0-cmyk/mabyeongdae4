@@ -10,7 +10,7 @@ function loadUtils() {
   return require('../comment-edit-classification');
 }
 
-test('explicit administrative soldier is represented by the internal unknown/admin category', () => {
+test('explicit administrative soldier remains internal unclassified data rather than a separate public category', () => {
   const utils = loadUtils();
   assert.equal(utils.resolveApplicantType({ userId:'new-admin', comment:'행정병 신청합니다 / 서버A / 열심히 하겠습니다' }), 'unknown');
   assert.equal(utils.resolveApplicantType({ userId:'new-mix', comment:'병사 OR 행정병 / 서버B / 오래 방송하겠습니다' }), 'unknown');
@@ -39,15 +39,11 @@ test('paragraph-delimited application comments map sections after the role line'
   assert.equal(parsed.reason, '끝까지 열심히 하겠습니다');
 });
 
-test('administrative soldier is exposed as a blue UI label without changing the internal storage key', () => {
+test('administrative soldier has no separate filter or relabeled application-field UI', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const ui = fs.readFileSync(path.join(__dirname, '..', 'application-field-ui.js'), 'utf8');
-  const css = fs.existsSync(path.join(__dirname, '..', 'admin-history-overrides.css'))
-    ? fs.readFileSync(path.join(__dirname, '..', 'admin-history-overrides.css'), 'utf8') : '';
-  assert.match(html, /id="unknownFilterBtn"[^>]*>행정병</);
-  assert.match(ui, /행정병/);
-  assert.match(css, /#unknownFilterBtn/);
-  assert.match(css.toLowerCase(), /var\(--blue\)|#6e8dff|#506ef0/);
+  assert.doesNotMatch(html, /id="unknownFilterBtn"/);
+  assert.doesNotMatch(ui, /행정병/);
 });
 
 test('history summary entry point and grouped season lists exist', () => {
