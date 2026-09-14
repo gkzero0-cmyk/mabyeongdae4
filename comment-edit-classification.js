@@ -19,6 +19,14 @@
       .find(Boolean) || '';
   }
 
+  function rankedPreferenceType(comment) {
+    const match = normalizeRoleComment(comment).match(/(?:^|\s)1\s*지망\s*[:：\-]?\s*(간부|행정병|훈련병|훈병|병사|병)(?=$|[\s,.;/|)\]}])/iu);
+    if (!match) return '';
+    if (match[1] === '간부') return 'officer';
+    if (match[1] === '행정병') return 'unknown';
+    return 'soldier';
+  }
+
   function hasExplicitAdministrativeSignal(comment) {
     const raw = normalizeRoleComment(comment);
     const normalized = raw.replace(/\s+/g, ' ').trim();
@@ -62,6 +70,8 @@
 
   function detectApplicantType(comment) {
     const normalized = normalizeRoleComment(comment);
+    const preference = rankedPreferenceType(normalized);
+    if (preference) return preference;
     if (hasExplicitAdministrativeSignal(normalized)) return 'unknown';
     return baseDetect(normalized);
   }
@@ -103,6 +113,7 @@
   return {
     ...base,
     normalizeRoleComment,
+    rankedPreferenceType,
     hasExplicitAdministrativeSignal,
     hasExplicitLiveApplicantTypeSignal,
     detectApplicantType,
