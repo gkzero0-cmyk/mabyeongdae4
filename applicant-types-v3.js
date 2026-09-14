@@ -146,7 +146,7 @@
   "nyaming0505": "soldier",
   "kumi030a": "soldier",
   "iminging20": "soldier",
-  "kimhaetae": "unknown",
+  "kimhaetae": "officer",
   "myomong69": "soldier",
   "odaoda0988": "soldier",
   "ironyan": "soldier",
